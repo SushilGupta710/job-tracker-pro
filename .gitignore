@@ -1,0 +1,22 @@
+# --- OS Metadata ---
+.DS_Store
+Thumbs.db
+
+# --- Dependencies ---
+node_modules/
+package-lock.json
+
+# --- Angular (Client) ---
+.angular/
+dist/
+.vscode/
+.editorconfig
+
+# --- Node.js (Server) ---
+.env
+.env.local
+npm-debug.log*
+
+# --- Production Builds ---
+/dist
+/out
