@@ -40,7 +40,7 @@ cd job-tracker-pro
 ### 2. Backend setup
 
 ```bash
-cd server
+cd job-tracker-backend
 npm install
 ```
 
@@ -63,7 +63,7 @@ node server.js
 Open a new terminal:
 
 ```bash
-cd client
+cd job-tracker-app
 npm install
 ng serve
 ```
