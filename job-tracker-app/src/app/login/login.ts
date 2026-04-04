@@ -1,5 +1,5 @@
-import { Component, ChangeDetectorRef, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectorRef, OnInit, signal, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../services/auth-service';
 import { Router } from '@angular/router';
@@ -8,11 +8,11 @@ import { TostNotification } from '../shared/tost-notification/tost-notification'
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule,TostNotification],
+  imports: [CommonModule, ReactiveFormsModule, TostNotification],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class Login {
+export class Login implements OnInit {
   mode: 'login' | 'signup' | 'forgot' = 'login';
   loginForm: FormGroup;
   signupForm: FormGroup;
@@ -20,9 +20,9 @@ export class Login {
 
   isLoading = signal(false);
   toastMessage = signal('');
-
+  toastType = signal<'success' | 'error' | 'warning'>('error');
   private toastTimeout: any;
-
+  private platformId = inject(PLATFORM_ID);
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -49,6 +49,12 @@ export class Login {
     });
   }
 
+  ngOnInit() {
+    if (isPlatformBrowser(this.platformId) && this.authService.isAuthenticated()) {
+      this.router.navigate(['/dashboard']);
+    }
+  }
+
   setMode(mode: 'login' | 'signup' | 'forgot') {
     this.mode = mode;
     this.closeToast();
@@ -60,10 +66,13 @@ export class Login {
     return password?.value === confirmPassword?.value ? null : { mismatch: true };
   }
 
-  showToast(message: string) {
+  showToast(message: string, type: 'success' | 'error' | 'warning' = 'error') {
     this.toastMessage.set(message);
+    this.toastType.set(type);
 
-    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
 
     this.toastTimeout = setTimeout(() => {
       this.toastMessage.set('');
@@ -181,10 +190,11 @@ export class Login {
   }
 
   private handleAuthSuccess(res: any) {
-    localStorage.setItem('token', res.session.access_token);
-    localStorage.setItem('user', JSON.stringify(res.user));
-    this.showToast('Login successful!');
-
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('token', res.session.access_token);
+      localStorage.setItem('user', JSON.stringify(res.user));
+    }
+    this.showToast('Login successful!','success');
     setTimeout(() => {
       this.router.navigate(['/dashboard']);
     }, 800);

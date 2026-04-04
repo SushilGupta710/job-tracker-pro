@@ -9,10 +9,10 @@ import { ReactiveFormsModule } from '@angular/forms';
   styleUrl: './tost-notification.css',
 })
 export class TostNotification {
-  @Input() toastMessage = ''; // receive the value from parent
-  @Output() close = new EventEmitter<void>(); // let parent know when user clicks close
-
+  @Input() toastMessage = ''; 
+  @Output() close = new EventEmitter<void>();
+  @Input() toastType: 'success' | 'error' | 'warning' = 'error';
   onClose() {
-    this.close.emit(); // parent can call `closeToast()` when this fires
+    this.close.emit();
   }
 }

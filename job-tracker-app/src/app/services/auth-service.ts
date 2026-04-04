@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -11,12 +11,10 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   registerUser(userData: any) {
-    // This calls your Node.js API, NOT Supabase directly
     return this.http.post(`${this.apiUrl}/signup`, userData);
   }
 
   loginUser(credentials: any): Observable<any> {
-    // This calls your Node.js server.js signin route
     return this.http.post(`${this.apiUrl}/signin`, credentials);
   }
 
@@ -33,7 +31,35 @@ export class AuthService {
   }
 
   sendPasswordReset(email: string) {
-  // Direct call to Supabase via your Node server or directly
-  return this.http.post(`${this.apiUrl}/reset-password`, { email });
-}
+    return this.http.post(`${this.apiUrl}/reset-password`, { email });
+  }
+
+  logout() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  }
+
+  isAuthenticated(): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return !!localStorage.getItem('token');
+  }
+
+  getUser() {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  }
+
+  updateUser(user: any) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+    return of(user);
+  }
 }

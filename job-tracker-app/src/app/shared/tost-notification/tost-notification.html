@@ -1,25 +1,78 @@
 @let isOpen = toastMessage !== '';
 
 @if (isOpen) {
-  <div
-    class="fixed top-5 right-5 z-[100] w-full max-w-sm px-4 sm:px-0"
-  >
+  <div class="fixed top-5 right-5 z-[100] w-full max-w-sm px-4 sm:px-0">
     <div
-      class="flex items-center w-full p-4 rounded-lg shadow-2xl border text-red-100 bg-slate-900 border-red-500/30"
+      class="flex items-center w-full p-4 rounded-lg shadow-2xl border"
       role="alert"
+      [ngClass]="{
+        'text-green-100 bg-slate-900 border-green-500/30': toastType === 'success',
+        'text-red-100 bg-slate-900 border-red-500/30': toastType === 'error',
+        'text-yellow-100 bg-slate-900 border-yellow-500/30': toastType === 'warning'
+      }"
     >
       <div
-        class="inline-flex items-center justify-center shrink-0 w-8 h-8 text-red-400 bg-red-500/10 rounded-lg"
+        class="inline-flex items-center justify-center shrink-0 w-8 h-8 rounded-lg"
+        [ngClass]="{
+          'text-green-400 bg-green-500/10': toastType === 'success',
+          'text-red-400 bg-red-500/10': toastType === 'error',
+          'text-yellow-400 bg-yellow-500/10': toastType === 'warning'
+        }"
       >
-        <svg
-          class="w-5 h-5"
-          aria-hidden="true"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 0 0 3.65 18h16.7a1 1 0 0 0 .86-1.5l-7.5-13a1 1 0 0 0-1.72 0Z" />
-        </svg>
+        @if (toastType === 'success') {
+          <svg
+            class="w-5 h-5"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 12.5 10 17l9-9"
+            />
+          </svg>
+        }
+
+        @if (toastType === 'error') {
+          <svg
+            class="w-5 h-5"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 0 0 3.65 18h16.7a1 1 0 0 0 .86-1.5l-7.5-13a1 1 0 0 0-1.72 0Z"
+            />
+          </svg>
+        }
+
+        @if (toastType === 'warning') {
+          <svg
+            class="w-5 h-5"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 0 0 3.65 18h16.7a1 1 0 0 0 .86-1.5l-7.5-13a1 1 0 0 0-1.72 0Z"
+            />
+          </svg>
+        }
+
         <span class="sr-only">Toast icon</span>
       </div>
 
@@ -41,7 +94,13 @@
           fill="none"
           viewBox="0 0 24 24"
         >
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" />
+          <path
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18 18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </div>
