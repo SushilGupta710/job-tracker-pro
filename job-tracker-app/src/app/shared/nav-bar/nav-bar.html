@@ -3,14 +3,12 @@
 >
   <div class="mx-auto flex items-center justify-between px-4 py-3">
     <div class="flex items-center gap-4">
-      <a
-        class="flex items-center gap-2 text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer"
-        [ngClass]="{ 'text-indigo-600 dark:text-indigo-400': currentNav() === 'dashboard' }"
-        (click)="onNavClick('dashboard')"
+      <p
+        class="flex items-center gap-2 text-slate-900 dark:text-white"
       >
-        <img class="h-7" src="/assets/logo.svg" alt="Appy Flow logo" />
-        <span class="self-center text-xl font-semibold whitespace-nowrap">Appy Flow</span>
-      </a>
+        <img class="h-10" src="/assets/logo.svg" alt="Apply with flow logo" />
+        <span class="self-center text-xl font-semibold whitespace-nowrap">Apply with flow</span>
+    </p>
 
       <button
         type="button"
@@ -56,7 +54,7 @@
           class="flex items-center gap-2 rounded-full bg-slate-100 dark:bg-slate-800 p-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
         >
           <span class="sr-only">Open user menu</span>
-          <img class="w-8 h-8 rounded-full" src="/assets/logo.svg" alt="User photo" />
+          <img class="w-6 h-6 rounded-full" src="/assets/logo.svg" alt="User photo" />
         </button>
 
         <div
@@ -120,14 +118,21 @@
     class="md:hidden bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800"
   >
     <ul class="flex flex-col p-4 space-y-2">
-      >
       <button
         type="button"
-        (click)="onNavClick('dashboard'); toggleMobileMenu()"
+        (click)="onNavClick('dashboard')"
         class="block py-2 px-3 text-slate-900 dark:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition w-full text-left"
         [ngClass]="{ 'bg-indigo-100 dark:bg-slate-800': currentNav() === 'dashboard' }"
       >
         Home
+      </button>
+      <button
+        type="button"
+        (click)="onNavClick('job-tracker')"
+        class="block py-2 px-3 text-slate-900 dark:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition w-full text-left"
+        [ngClass]="{ 'bg-indigo-100 dark:bg-slate-800': currentNav() === 'job-tracker' }"
+      >
+        Job Tracker
       </button>
     </ul>
   </div>

@@ -20,6 +20,10 @@ export class NavBarComponent {
     private authService: AuthService,
     private router: Router,
   ) {
+    const path = this.router.url;
+    if (path.startsWith('/job-tracker')) {
+      this.currentNav.set('job-tracker');
+    }
   }
 
   toggleDropdown() {

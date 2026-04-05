@@ -25,6 +25,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'job-tracker',
+    loadComponent: () => import('./job-tracker/job-tracker').then((m) => m.JobTrackerPage),
+    canActivate: [authGuard],
+  },
+  {
     path: '**',
     redirectTo: 'login',
   },

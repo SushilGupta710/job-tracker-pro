@@ -1,0 +1,81 @@
+<app-nav-bar></app-nav-bar>
+<div class="pt-20 px-4 py-4 dark:bg-slate-950 min-h-screen transition-all duration-300">
+  <!-- Compact Header: Title + Search + Buttons in One Line -->
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+    <div class="min-w-0">
+      <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Job Tracker</h1>
+      <p class="text-xs text-slate-600 dark:text-slate-300">
+        Track applications and manage your job search
+      </p>
+    </div>
+
+    <!-- Search Bar + Action Buttons -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-2 flex-shrink-0">
+      <div class="flex-1 sm:flex-1 min-w-80 sm:min-w-96">
+        <app-job-tracker-header
+          [searchTerm]="searchTerm()"
+          (searchTermChange)="onSearchChange($event)"
+        ></app-job-tracker-header>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white shadow-sm hover:bg-indigo-700 transition font-medium whitespace-nowrap"
+          (click)="openAddModal()"
+        >
+          Add job
+        </button>
+        <app-job-tracker-actions-menu
+          (downloadExcel)="onDownloadExcel()"
+          (openBulkImport)="onOpenBulkImport()"
+        ></app-job-tracker-actions-menu>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop Kanban View -->
+  <div class="hidden lg:block w-full">
+    <app-job-list-desktop
+      [jobs]="filteredJobs()"
+      [draggedJobId]="draggedJobId"
+      (dragStart)="onDragStart($event)"
+      (statusChange)="onStatusChange($event)"
+      (selectJob)="onSelectJob($event)"
+    ></app-job-list-desktop>
+  </div>
+
+  <!-- Mobile Table View -->
+  <div class="lg:hidden w-full">
+    <app-job-list-mobile
+      [jobs]="filteredJobs()"
+      (viewJob)="onSelectJob($event)"
+    ></app-job-list-mobile>
+  </div>
+</div>
+
+<!-- Add Job Modal -->
+<app-add-job-modal
+  *ngIf="showAddModal()"
+  [jobToEdit]="jobToEdit()"
+  (save)="onAddJobSave($event)"
+  (cancel)="closeAddModal()"
+></app-add-job-modal>
+
+<!-- Import Dialog -->
+<app-import-dialog
+  *ngIf="showImportDialog()"
+  (import)="onImport($event)"
+  (cancel)="closeImportDialog()"
+  (downloadTemplate)="onDownloadTemplate()"
+></app-import-dialog>
+
+<!-- Job Detail Modal -->
+<app-job-detail-modal
+  *ngIf="showDetailModal() && selectedJob()"
+  [job]="selectedJob()!"
+  (updateJob)="onUpdateJob($event)"
+  (deleteJob)="onDeleteJob($event)"
+  (editJob)="onEditJob()"
+  (viewJobLink)="onViewJobLink($event)"
+  (close)="closeDetailModal()"
+></app-job-detail-modal>
