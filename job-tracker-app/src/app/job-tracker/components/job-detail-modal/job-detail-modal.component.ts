@@ -3,20 +3,36 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Job, JobTimelineItem, JobStatus } from '../../services/job-tracker.service';
 import { HttpService } from '../../../appservice/http-service';
+import { ConfirmationDialogComponent } from '../../../shared/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-job-detail-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmationDialogComponent],
   template: `
     <div class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
       <div class="w-full max-w-4xl rounded-3xl bg-white p-4 sm:p-8 shadow-2xl dark:bg-slate-900 max-h-[85vh] overflow-y-auto">
+        <app-confirmation-dialog
+          *ngIf="showConfirmDialog()"
+          title="Delete Job"
+          message="Are you sure you want to delete this job? This action cannot be undone."
+          (confirm)="onConfirmDelete()"
+          (cancel)="onCancelDelete()"
+        ></app-confirmation-dialog>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
           <div class="flex items-center gap-3 sm:gap-4">
             <img [src]="job().logo || '/assets/default-logo.png'" [alt]="job().company + ' logo'" class="h-12 w-12 sm:h-16 sm:w-16 rounded-xl object-cover" />
             <div>
               <h2 class="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{{ job().title }}</h2>
-              <p class="text-sm sm:text-lg text-slate-500 dark:text-slate-400">{{ job().company }}</p>
+              <p class="text-sm sm:text-lg text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                {{ job().company }}
+                <span *ngIf="job().location" class="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                  </svg>
+                  {{ job().location }}
+                </span>
+              </p>
             </div>
           </div>
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2 flex-shrink-0">
@@ -37,7 +53,7 @@ import { HttpService } from '../../../appservice/http-service';
               </button>
               <button
                 type="button"
-                (click)="deleteJob.emit(job().id)"
+                (click)="onDelete()"
                 class="rounded-lg bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700 transition dark:bg-red-500 dark:hover:bg-red-600 font-medium"
               >
                 Delete
@@ -59,7 +75,7 @@ import { HttpService } from '../../../appservice/http-service';
 
         <div class="mb-6">
           <p class="text-sm text-slate-600 dark:text-slate-400">
-            <strong>Applied Date:</strong> {{ editedAppliedAt() }}
+            <strong>Applied via {{ job().source }} on {{ formatAppliedDate(job().appliedAt) }}</strong>
           </p>
         </div>
 
@@ -70,6 +86,7 @@ import { HttpService } from '../../../appservice/http-service';
               <div class="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-400 mt-2"></div>
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">{{ item.message }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ item.subMessage }}</p>
                 <p class="text-xs text-slate-500 dark:text-slate-400">{{ item.date }}</p>
               </div>
             </div>
@@ -101,6 +118,7 @@ export class JobDetailModalComponent {
   editedStatus = signal<string>('');
   editedAppliedAt = signal<string>('');
   timeline = signal<JobTimelineItem[]>([]);
+  showConfirmDialog = signal(false);
   private httpService = inject(HttpService);
 
   constructor() {
@@ -110,11 +128,29 @@ export class JobDetailModalComponent {
       this.editedAppliedAt.set(currentJob.appliedAt);
       // Fetch timeline
       this.httpService.getTimeline(currentJob.id).subscribe({
-        next: (data) => this.timeline.set(data.map((item: any) => ({
-          id: item.id,
-          message: `Status changed to ${item.job_status?.status_name || item.status}`,
-          date: new Date(item.status_change_date).toLocaleString()
-        }))),
+        next: (data) => {
+          const sortedData = data.sort((a: any, b: any) => new Date(a.status_change_date).getTime() - new Date(b.status_change_date).getTime());
+          const timelineItems = sortedData.map((item: any, index: number) => {
+            const statusName = item.job_status?.status_name || item.status;
+            let message = '';
+            let subMessage = '';
+            if (index === 0) {
+              message = 'New Job created';
+              subMessage = 'You added a new job';
+            } else {
+              const prevStatus = sortedData[index - 1].job_status?.status_name || sortedData[index - 1].status;
+              message = `Moved to ${statusName}`;
+              subMessage = `You moved this job from ${prevStatus} to ${statusName}`;
+            }
+            return {
+              id: item.id,
+              message,
+              subMessage,
+              date: new Date(item.status_change_date).toDateString()
+            };
+          });
+          this.timeline.set(timelineItems);
+        },
         error: () => this.timeline.set([])
       });
     });
@@ -122,5 +158,24 @@ export class JobDetailModalComponent {
 
   updateEditedJob() {
     this.updateJobStatus.emit({jobId: this.job().id, newStatus: this.editedStatus() as JobStatus});
+  }
+
+  onDelete() {
+    this.showConfirmDialog.set(true);
+  }
+
+  onConfirmDelete() {
+    this.showConfirmDialog.set(false);
+    this.deleteJob.emit(this.job().id);
+  }
+
+  onCancelDelete() {
+    this.showConfirmDialog.set(false);
+  }
+
+  formatAppliedDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toDateString();
   }
 }

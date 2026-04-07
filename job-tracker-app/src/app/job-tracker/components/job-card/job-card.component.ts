@@ -25,7 +25,7 @@ import { Job } from '../../services/job-tracker.service';
         </div>
       </div>
       <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        {{ job().appliedAt | date: 'short' }}
+        {{ getRelativeTime(job().appliedAt) }}
       </div>
     </div>
   `,
@@ -41,5 +41,23 @@ export class JobCardComponent {
       event.dataTransfer.setData('text/plain', JSON.stringify({ jobId: this.job().id }));
     }
     this.dragStart.emit(this.job().id);
+  }
+
+  getRelativeTime(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffMonths = Math.floor(diffDays / 30);
+
+    if (diffSeconds < 60) return 'few seconds ago';
+    if (diffMinutes < 60) return diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
+    if (diffHours < 24) return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+    if (diffDays < 30) return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+    return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
   }
 }

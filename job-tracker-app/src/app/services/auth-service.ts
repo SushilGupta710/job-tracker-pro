@@ -33,8 +33,8 @@ export class AuthService {
     return this.httpService.authPasswordReset(email);
   }
 
-  getUserProfile(userId: string) {
-    return this.httpService.getUserProfile(userId);
+  getUserProfile() {
+    return this.httpService.getUserProfile();
   }
 
   updateUserProfile(payload: any) {

@@ -20,9 +20,9 @@ import { Job } from '../../services/job-tracker.service';
         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
           <tr *ngFor="let job of jobs()" class="hover:bg-slate-50 dark:hover:bg-slate-900 transition">
             <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
+              <div class="flex flex-col items-center gap-1">
                 <img [src]="job.logo || '/assets/default-logo.png'" [alt]="job.company + ' logo'" class="h-8 w-8 rounded-lg object-cover" />
-                <span class="font-medium text-slate-900 dark:text-white">{{ job.company }}</span>
+                <span class="font-medium text-slate-900 dark:text-white text-center">{{ job.company }}</span>
               </div>
             </td>
             <td class="px-4 py-3 text-slate-700 dark:text-slate-300">{{ job.title }}</td>

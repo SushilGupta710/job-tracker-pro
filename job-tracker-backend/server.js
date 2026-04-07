@@ -66,14 +66,11 @@ app.post('/api/auth/signin', async (req, res) => {
 
 // --- 3. USER APIS (PROTECTED) ---
 
-app.get('/api/user/:userId', authenticateToken, async (req, res) => {
-    const { data, error } = await supabase.auth.admin.getUserById(req.params.userId);
-    if (error) return res.status(404).json({ error: error.message });
-
+app.get('/api/user', authenticateToken, async (req, res) => {
     res.json({
-        first_name: data.user.user_metadata.first_name,
-        last_name: data.user.user_metadata.last_name,
-        email: data.user.email
+        first_name: req.user.user_metadata.first_name,
+        last_name: req.user.user_metadata.last_name,
+        email: req.user.email
     });
 });
 
@@ -103,11 +100,11 @@ app.get('/api/jobs/statuses', authenticateToken, async (req, res) => {
 // --- 5. JOB MANAGEMENT APIS ---
 
 // Get all jobs for a specific user
-app.get('/api/jobs/user/:userId', authenticateToken, async (req, res) => {
+app.get('/api/jobs', authenticateToken, async (req, res) => {
     const { data, error } = await supabase
         .from('user_job_data')
-        .select(`*, job_status(status_name)`)
-        .eq('user_id', req.params.userId);
+        .select(`*, job_status(status_name), job_source(source_name)`)
+        .eq('user_id', req.user.id);
 
     if (error) return res.status(400).json({ error: error.message });
     // Map 'Saved' to 'Saved/New' in the response
@@ -135,6 +132,7 @@ app.post('/api/jobs/create', authenticateToken, async (req, res) => {
         job_description: job.description,
         status_id: job.status_id || 1,
         job_image_url: job.job_image_url || null, // Fixed: was 'logo'
+        source_id: 1, // Default to Manual
         // job_modified_date: null, // Keep it null initially as per your requirement
     };
 
@@ -142,7 +140,7 @@ app.post('/api/jobs/create', authenticateToken, async (req, res) => {
     const { data, error } = await supabase
         .from('user_job_data')
         .insert(payload)
-        .select(`*, job_status(status_name)`)
+        .select(`*, job_status(status_name), job_source(source_name)`)
         .single(); // Returns the object directly instead of an array
 
     if (error) return res.status(400).json({ error: error.message });
@@ -229,14 +227,13 @@ app.get('/api/jobs/timeline/:jobId', authenticateToken, async (req, res) => {
 
 // --- 6. SEARCH & EXPORT ---
 
-app.get('/api/jobs/search/:userId', authenticateToken, async (req, res) => {
+app.get('/api/jobs/search', authenticateToken, async (req, res) => {
     const { query } = req.query; // example: ?query=Google
-    const { userId } = req.params;
 
     const { data, error } = await supabase
         .from('user_job_data')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', req.user.id)
         .or(`job_title.ilike.%${query}%,job_company_name.ilike.%${query}%,job_location.ilike.%${query}%`);
 
     if (error) return res.status(400).json({ error: error.message });
@@ -244,11 +241,11 @@ app.get('/api/jobs/search/:userId', authenticateToken, async (req, res) => {
 });
 
 // Download/Get all data for CSV conversion in Angular
-app.get('/api/jobs/export/:userId', authenticateToken, async (req, res) => {
+app.get('/api/jobs/export', authenticateToken, async (req, res) => {
     const { data, error } = await supabase
         .from('user_job_data')
         .select('*')
-        .eq('user_id', req.params.userId);
+        .eq('user_id', req.user.id);
 
     if (error) return res.status(400).json({ error: error.message });
     res.json(data);
@@ -256,15 +253,56 @@ app.get('/api/jobs/export/:userId', authenticateToken, async (req, res) => {
 
 // --- 7. BULK IMPORT ---
 app.post('/api/jobs/bulk-import', authenticateToken, async (req, res) => {
-    const { jobs } = req.body; // Expecting an array of job objects
+    const { jobs } = req.body; 
 
-    // Ensure user_id is set to the current user for all imported rows for security
-    const sanitizedJobs = jobs.map(job => ({ ...job, user_id: req.user.id }));
+    if (!jobs || !Array.isArray(jobs)) {
+        return res.status(400).json({ error: "Invalid data format. Expected an array." });
+    }
 
-    const { data, error } = await supabase.from('user_job_data').insert(sanitizedJobs);
+    // 1. Prepare the data with correct column names
+    const sanitizedJobs = jobs.map(job => ({
+        user_id: req.user.id,
+        source_id: job.source_id || 1, 
+        job_title: job.title,
+        job_company_name: job.company,
+        job_url: job.url,
+        job_salary: job.salary,
+        job_location: job.location,
+        job_description: job.description,
+        status_id: job.status_id || 1,
+        job_image_url: job.job_image_url || null,
+        job_applieddate: job.job_applieddate || new Date().toISOString()
+    }));
 
-    if (error) return res.status(400).json({ error: error.message });
-    res.status(201).json({ message: `${sanitizedJobs.length} jobs imported successfully` });
+    // 2. Insert into main table and SELECT the new IDs back
+    const { data: newJobs, error: jobError } = await supabase
+        .from('user_job_data')
+        .insert(sanitizedJobs)
+        .select('id, status_id'); // We need these to build the timeline
+
+    if (jobError) return res.status(400).json({ error: jobError.message });
+
+    // 3. Create timeline entries for ALL imported jobs
+    const timelineEntries = newJobs.map(job => ({
+        job_id: job.id,
+        user_id: req.user.id,
+        status_id: job.status_id,
+        status_change_date: new Date().toISOString()
+    }));
+
+    const { error: timelineError } = await supabase
+        .from('job_status_history')
+        .insert(timelineEntries);
+
+    if (timelineError) {
+        console.error("Timeline Bulk Error:", timelineError);
+        // We don't return error here because jobs are already created, 
+        // but it's good to log it.
+    }
+
+    res.status(201).json({ 
+        message: `${newJobs.length} jobs and timeline records imported successfully` 
+    });
 });
 
 const PORT = process.env.PORT || 3000;

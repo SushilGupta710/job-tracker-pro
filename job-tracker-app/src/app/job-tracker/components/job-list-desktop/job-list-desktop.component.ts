@@ -11,7 +11,7 @@ import { Job, JobStatus } from '../../services/job-tracker.service';
     <div class="w-full overflow-x-auto">
       <div class="grid gap-3 p-3 min-w-max" style="grid-template-columns: repeat(5, minmax(200px, 1fr))">
         <div *ngFor="let status of statuses" class="flex flex-col gap-2">
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-white px-1">{{ status }}</h3>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-white px-1">{{ status }} ({{ getJobsByStatus(status).length }})</h3>
           <div class="space-y-2 rounded-xl border border-slate-200 bg-gradient-to-b from-slate-100 to-slate-50 p-2 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950 h-[500px] overflow-y-auto"
             (drop)="onDrop($event, status)"
             (dragover)="onDragOver($event)"

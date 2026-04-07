@@ -13,12 +13,6 @@ import { Job } from '../../services/job-tracker.service';
 
         <div class="mb-6 space-y-4">
           <div>
-            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">CSV Columns (Required):</p>
-            <p class="text-xs text-slate-600 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">
-              title, company, url, salary, location, description, applieddate, status
-            </p>
-          </div>
-          <div>
             <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date Format for Applied Date:</p>
             <p class="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 p-2 rounded">
               Use format: YYYY-MM-DD HH:MM (e.g., 2026-04-05 14:30) or leave empty for current date/time
@@ -26,14 +20,10 @@ import { Job } from '../../services/job-tracker.service';
           </div>
           <div>
             <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Valid Status Values:</p>
-            <div class="space-y-1 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 p-2 rounded font-mono">
-              <div>• Saved/New</div>
-              <div>• Applied</div>
-              <div>• Interviewing</div>
-              <div>• Offer</div>
-              <div>• Rejected</div>
+            <div class="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 p-2 rounded">
+              <span class="font-mono">Saved/New • Applied • Interviewing • Offer • Rejected</span>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Invalid status values will default to "Saved/New"</p>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Invalid status values will default to "Saved/New"</p>
           </div>
           <button
             type="button"

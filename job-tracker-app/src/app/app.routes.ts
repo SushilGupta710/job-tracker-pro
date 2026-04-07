@@ -2,13 +2,13 @@ import { Routes } from '@angular/router';
 import { Login } from './login/login';
 import { Dashboard } from './dashboard/dashboard';
 import { authGuard } from './services/auth-guard-service';
-
+import { AuthService } from './services/auth-service';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
+    canActivate: [authGuard],
+    loadComponent: () => import('./job-tracker/job-tracker').then((m) => m.JobTrackerPage),
   },
   {
     path: 'login',
@@ -31,6 +31,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'login',
+    redirectTo: 'job-tracker',
   },
 ];

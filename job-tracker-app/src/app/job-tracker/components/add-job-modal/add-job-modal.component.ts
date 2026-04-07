@@ -22,7 +22,7 @@ interface AddJobForm {
   template: `
     <div class="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 p-4">
       <div class="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl dark:bg-slate-900 max-h-[90vh] overflow-y-auto">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Add New Job</h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">{{ isEdit() ? 'Update Job' : 'Add New Job' }}</h2>
 
         <form (ngSubmit)="onSubmit()" class="space-y-4">
           <!-- Row 1: Title and Company -->
@@ -147,7 +147,7 @@ interface AddJobForm {
               type="submit"
               class="flex-1 rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700 transition dark:bg-indigo-500 dark:hover:bg-indigo-600"
             >
-              Add Job
+              {{ isEdit() ? 'Update Job' : 'Add Job' }}
             </button>
             <button
               type="button"
@@ -167,7 +167,7 @@ export class AddJobModalComponent {
   save = output<Job>();
   cancel = output<void>();
 
-  private service = inject(JobTrackerService);
+   service = inject(JobTrackerService);
 
   form = signal<AddJobForm>({
     title: '',

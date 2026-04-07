@@ -88,8 +88,8 @@ export class HttpService {
     return this.get<{ url: string }>('/auth/google');
   }
 
-  getUserProfile(userId: string) {
-    return this.get(`/user/${userId}`);
+  getUserProfile() {
+    return this.get(`/user`);
   }
 
   updateUserProfile(data: any) {
@@ -100,8 +100,8 @@ export class HttpService {
     return this.get<any[]>('/jobs/statuses');
   }
 
-  getJobsByUser(userId: string) {
-    return this.get<any[]>(`/jobs/user/${userId}`);
+  getJobsByUser() {
+    return this.get<any[]>('/jobs');
   }
 
   createJob(data: any) {
@@ -120,13 +120,13 @@ export class HttpService {
     return this.patch<any>(`/jobs/status/${jobId}`, data);
   }
 
-  searchJobs(userId: string, query: string) {
+  searchJobs(query: string) {
     const params = new HttpParams().set('query', query);
-    return this.get<any[]>(`/jobs/search/${userId}`, params);
+    return this.get<any[]>('/jobs/search', params);
   }
 
-  exportJobs(userId: string) {
-    return this.get<any[]>(`/jobs/export/${userId}`);
+  exportJobs() {
+    return this.get<any[]>('/jobs/export');
   }
 
   getTimeline(jobId: string) {

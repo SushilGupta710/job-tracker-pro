@@ -9,6 +9,7 @@ export type JobStatus = 'Saved/New' | 'Applied' | 'Interviewing' | 'Offer' | 'Re
 export interface JobTimelineItem {
   id: string | number;
   message: string;
+  subMessage?: string;
   date: string;
 }
 
@@ -24,6 +25,7 @@ export interface Job {
   appliedAt: string;
   logo: string;
   timeline: JobTimelineItem[];
+  source?: string;
 }
 
 @Injectable({
@@ -84,7 +86,7 @@ export class JobTrackerService {
       return new Observable<any[]>((subscriber) => subscriber.complete());
     }
 
-    return this.httpService.getJobsByUser(user.id).pipe(
+    return this.httpService.getJobsByUser().pipe(
       tap((jobs) => {
         this.jobsSignal.set(jobs.map((job) => this.convertBackendJob(job)));
       })
@@ -246,6 +248,7 @@ export class JobTrackerService {
       appliedAt: raw.job_applieddate || raw.job_modified_date || raw.appliedAt || '',
       logo: raw.job_image_url || '/assets/default-logo.png',
       timeline: raw.timeline || [],
+      source: raw.job_source?.source_name || 'Manual',
     };
   }
 }

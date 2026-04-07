@@ -3,18 +3,21 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NavBarComponent } from '../shared/nav-bar/nav-bar';
 import { TostNotification } from '../shared/tost-notification/tost-notification';
+import { ConfirmationDialogComponent } from '../shared/confirmation-dialog/confirmation-dialog.component';
 import { AuthService } from '../services/auth-service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NavBarComponent, TostNotification],
+  imports: [CommonModule, ReactiveFormsModule, NavBarComponent, TostNotification, ConfirmationDialogComponent],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
 export class Profile implements OnInit {
   profileForm: FormGroup;
   isSaved = false;
+  isChanged = signal(false);
+  showConfirmDialog = signal(false);
   toastMessage = signal('');
   toastType = signal<'success' | 'error' | 'warning'>('success');
 
@@ -38,6 +41,15 @@ export class Profile implements OnInit {
         email: user.email || '',
       });
     }
+
+    // Track changes
+    this.profileForm.valueChanges.subscribe(() => {
+      const current = this.profileForm.value;
+      const original = this.authService.getUser();
+      this.isChanged.set(
+        current.firstName !== original?.first_name || current.lastName !== original?.last_name
+      );
+    });
   }
 
   showToast(message: string, type: 'success' | 'error' | 'warning' = 'success') {
@@ -52,6 +64,11 @@ export class Profile implements OnInit {
       return;
     }
 
+    this.showConfirmDialog.set(true);
+  }
+
+  onConfirmUpdate() {
+    this.showConfirmDialog.set(false);
     const user = this.authService.getUser() || {};
     const updated = {
       ...user,
@@ -62,6 +79,7 @@ export class Profile implements OnInit {
     this.authService.updateUserProfile(updated).subscribe({
       next: () => {
         this.isSaved = true;
+        this.isChanged.set(false);
         this.showToast('Profile updated successfully!', 'success');
         setTimeout(() => (this.isSaved = false), 2500);
       },
@@ -70,5 +88,9 @@ export class Profile implements OnInit {
         this.isSaved = false;
       },
     });
+  }
+
+  onCancelUpdate() {
+    this.showConfirmDialog.set(false);
   }
 }
