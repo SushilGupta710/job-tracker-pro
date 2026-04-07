@@ -1,7 +1,8 @@
-import { Component, input, output, signal, effect } from '@angular/core';
+import { Component, input, output, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Job } from '../../services/job-tracker.service';
+import { JobTrackerService } from '../../services/job-tracker.service';
 
 interface AddJobForm {
   title: string;
@@ -123,11 +124,7 @@ interface AddJobForm {
               name="status"
               class="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
             >
-              <option>Saved/New</option>
-              <option>Applied</option>
-              <option>Interviewing</option>
-              <option>Offer</option>
-              <option>Rejected</option>
+              <option *ngFor="let status of service.statusesDynamic()" [value]="status">{{ status }}</option>
             </select>
           </div>
 
@@ -169,6 +166,8 @@ export class AddJobModalComponent {
   jobToEdit = input<Job | null>(null);
   save = output<Job>();
   cancel = output<void>();
+
+  private service = inject(JobTrackerService);
 
   form = signal<AddJobForm>({
     title: '',
@@ -217,7 +216,7 @@ export class AddJobModalComponent {
   onSubmit() {
     const formData = this.form();
     const job: Job = {
-      id: this.jobToEdit()?.id || Date.now(),
+      id: this.jobToEdit()?.id ?? String(Date.now()),
       title: formData.title,
       company: formData.company,
       appliedAt: formData.appliedAt,

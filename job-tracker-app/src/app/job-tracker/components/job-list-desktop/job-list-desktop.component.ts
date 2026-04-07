@@ -33,10 +33,10 @@ import { Job, JobStatus } from '../../services/job-tracker.service';
 })
 export class JobListDesktopComponent {
   jobs = input.required<Job[]>();
-  draggedJobId = input.required<{ set: (value: number) => void }>();
-  statusChange = output<{ jobId: number; newStatus: JobStatus }>();
-  selectJob = output<number>();
-  dragStart = output<number>();
+  draggedJobId = input.required<{ set: (value: string) => void }>();
+  statusChange = output<{ jobId: string; newStatus: JobStatus }>();
+  selectJob = output<string>();
+  dragStart = output<string>();
 
   statuses: JobStatus[] = ['Saved/New', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
 

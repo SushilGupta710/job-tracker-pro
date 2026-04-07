@@ -1,6 +1,7 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { Component, signal, inject, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavBarComponent } from '../shared/nav-bar/nav-bar';
+import { TostNotification } from '../shared/tost-notification/tost-notification';
 import { JobTrackerService, Job, JobStatus } from './services/job-tracker.service';
 import { JobTrackerHeaderComponent } from './components/header/header.component';
 import { JobTrackerActionsMenuComponent } from './components/actions-menu/actions-menu.component';
@@ -16,6 +17,7 @@ import { JobListMobileComponent } from './components/job-list-mobile/job-list-mo
   imports: [
     CommonModule,
     NavBarComponent,
+    TostNotification,
     JobTrackerHeaderComponent,
     JobTrackerActionsMenuComponent,
     AddJobModalComponent,
@@ -27,7 +29,7 @@ import { JobListMobileComponent } from './components/job-list-mobile/job-list-mo
   templateUrl: './job-tracker.html',
   styleUrls: ['./job-tracker.css'],
 })
-export class JobTrackerPage {
+export class JobTrackerPage implements OnInit {
   private readonly service = inject(JobTrackerService);
 
   // UI State
@@ -36,17 +38,31 @@ export class JobTrackerPage {
   showDetailModal = signal(false);
   selectedJob = signal<Job | null>(null);
   jobToEdit = signal<Job | null>(null);
-  draggedJobId = signal<number>(0);
+  draggedJobId = signal<string>('');
+  toastMessage = signal('');
+  toastType = signal<'success' | 'error' | 'warning'>('success');
   isMobile = computed(() => (typeof window !== 'undefined' ? window.innerWidth < 768 : false));
 
   // Delegate service signals
   jobs = this.service.jobs;
   searchTerm = this.service.searchTerm;
   filteredJobs = this.service.filteredJobs;
+  hasJobs = computed(() => this.jobs().length > 0);
 
   // Search input change handler
+  ngOnInit() {
+    this.service.loadJobs().subscribe();
+    this.service.loadStatuses().subscribe();
+  }
+
   onSearchChange(term: string) {
     this.service.setSearchTerm(term);
+  }
+
+  showToast(message: string, type: 'success' | 'error' | 'warning' = 'success') {
+    this.toastMessage.set(message);
+    this.toastType.set(type);
+    setTimeout(() => this.toastMessage.set(''), 3000);
   }
 
   // Add job modal handlers
@@ -56,12 +72,25 @@ export class JobTrackerPage {
 
   onAddJobSave(job: Job) {
     if (this.jobToEdit()) {
-      this.service.updateJob(job);
+      this.service.updateJob(job).subscribe({
+        next: () => {
+          this.showToast('Job updated successfully.', 'success');
+          this.showAddModal.set(false);
+          this.jobToEdit.set(null);
+        },
+        error: () => this.showToast('Unable to update job. Please try again.', 'error'),
+      });
     } else {
-      this.service.addJob(job);
+      this.service.addJob(job).subscribe({
+        next: () => {
+          this.showToast('Job added successfully.', 'success');
+          this.service.loadJobs().subscribe(); // Reload to ensure visibility
+          this.showAddModal.set(false);
+          this.jobToEdit.set(null);
+        },
+        error: () => this.showToast('Unable to add job. Please try again.', 'error'),
+      });
     }
-    this.showAddModal.set(false);
-    this.jobToEdit.set(null);
   }
 
   closeAddModal() {
@@ -71,6 +100,10 @@ export class JobTrackerPage {
 
   // Action menu handlers
   onDownloadExcel() {
+    if (this.filteredJobs().length === 0) {
+      this.showToast('No jobs available to download.', 'warning');
+      return;
+    }
     this.service.downloadExcel();
   }
 
@@ -80,8 +113,13 @@ export class JobTrackerPage {
 
   // Import dialog handlers
   onImport(jobs: Job[]) {
-    jobs.forEach((job) => this.service.addJob(job));
-    this.showImportDialog.set(false);
+    this.service.importJobs(jobs).subscribe({
+      next: () => {
+        this.showToast(`Imported ${jobs.length} jobs successfully.`, 'success');
+        this.showImportDialog.set(false);
+      },
+      error: () => this.showToast('Failed to import jobs. Please try again.', 'error'),
+    });
   }
 
   closeImportDialog() {
@@ -93,7 +131,7 @@ export class JobTrackerPage {
   }
 
   // Job list handlers
-  onSelectJob(jobId: number) {
+  onSelectJob(jobId: string) {
     const job = this.jobs().find((j) => j.id === jobId);
     if (job) {
       this.selectedJob.set(job);
@@ -101,18 +139,33 @@ export class JobTrackerPage {
     }
   }
 
-  onStatusChange(data: { jobId: number; newStatus: JobStatus }) {
-    this.service.updateJobStatus(data.jobId, data.newStatus);
+  onStatusChange(data: { jobId: string; newStatus: JobStatus }) {
+    this.service.updateJobStatus(data.jobId, data.newStatus).subscribe({
+      next: () => this.showToast('Status updated successfully.', 'success'),
+      error: () => this.showToast('Unable to update status. Please try again.', 'error'),
+    });
   }
 
-  onDragStart(jobId: number) {
+  onDragStart(jobId: string) {
     this.draggedJobId.set(jobId);
   }
 
   // Detail modal handlers
   onUpdateJob(job: Job) {
-    this.service.updateJob(job);
-    this.selectedJob.set(job);
+    this.service.updateJob(job).subscribe({
+      next: () => {
+        this.showToast('Job details saved.', 'success');
+        this.selectedJob.set(job);
+      },
+      error: () => this.showToast('Unable to save changes. Please try again.', 'error'),
+    });
+  }
+
+  onUpdateJobStatus(data: {jobId: string, newStatus: JobStatus}) {
+    this.service.updateJobStatus(data.jobId, data.newStatus).subscribe({
+      next: () => this.showToast('Status updated successfully.', 'success'),
+      error: () => this.showToast('Unable to update status. Please try again.', 'error'),
+    });
   }
 
   onEditJob() {
@@ -124,10 +177,15 @@ export class JobTrackerPage {
     }
   }
 
-  onDeleteJob(jobId: number) {
-    this.service.deleteJob(jobId);
-    this.showDetailModal.set(false);
-    this.selectedJob.set(null);
+  onDeleteJob(jobId: string) {
+    this.service.deleteJob(jobId).subscribe({
+      next: () => {
+        this.showToast('Job deleted successfully.', 'success');
+        this.showDetailModal.set(false);
+        this.selectedJob.set(null);
+      },
+      error: () => this.showToast('Unable to delete job. Please try again.', 'error'),
+    });
   }
 
   setJobToEdit(job: Job) {

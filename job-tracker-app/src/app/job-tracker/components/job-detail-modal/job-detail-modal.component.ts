@@ -1,7 +1,8 @@
-import { Component, input, output, signal, effect } from '@angular/core';
+import { Component, input, output, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Job, JobTimelineItem } from '../../services/job-tracker.service';
+import { Job, JobTimelineItem, JobStatus } from '../../services/job-tracker.service';
+import { HttpService } from '../../../appservice/http-service';
 
 @Component({
   selector: 'app-job-detail-modal',
@@ -12,7 +13,7 @@ import { Job, JobTimelineItem } from '../../services/job-tracker.service';
       <div class="w-full max-w-4xl rounded-3xl bg-white p-4 sm:p-8 shadow-2xl dark:bg-slate-900 max-h-[85vh] overflow-y-auto">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
           <div class="flex items-center gap-3 sm:gap-4">
-            <img [src]="job().logo" [alt]="job().company + ' logo'" class="h-12 w-12 sm:h-16 sm:w-16 rounded-xl object-cover" />
+            <img [src]="job().logo || '/assets/default-logo.png'" [alt]="job().company + ' logo'" class="h-12 w-12 sm:h-16 sm:w-16 rounded-xl object-cover" />
             <div>
               <h2 class="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{{ job().title }}</h2>
               <p class="text-sm sm:text-lg text-slate-500 dark:text-slate-400">{{ job().company }}</p>
@@ -65,7 +66,7 @@ import { Job, JobTimelineItem } from '../../services/job-tracker.service';
         <div class="mb-6">
           <h3 class="font-semibold text-slate-900 dark:text-white mb-3 text-lg">Activity Timeline</h3>
           <div class="space-y-2 max-h-64 overflow-y-auto bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
-            <div *ngFor="let item of job().timeline" class="flex gap-3 border-l-2 border-indigo-400 pl-4 py-2">
+            <div *ngFor="let item of timeline()" class="flex gap-3 border-l-2 border-indigo-400 pl-4 py-2">
               <div class="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-400 mt-2"></div>
               <div>
                 <p class="font-medium text-slate-900 dark:text-white text-sm">{{ item.message }}</p>
@@ -91,28 +92,35 @@ import { Job, JobTimelineItem } from '../../services/job-tracker.service';
 export class JobDetailModalComponent {
   job = input.required<Job>();
   updateJob = output<Job>();
-  deleteJob = output<number>();
+  updateJobStatus = output<{jobId: string, newStatus: JobStatus}>();
+  deleteJob = output<string>();
   close = output<void>();
   editJob = output<void>();
   viewJobLink = output<string>();
 
   editedStatus = signal<string>('');
   editedAppliedAt = signal<string>('');
+  timeline = signal<JobTimelineItem[]>([]);
+  private httpService = inject(HttpService);
 
   constructor() {
     effect(() => {
       const currentJob = this.job();
       this.editedStatus.set(currentJob.status);
       this.editedAppliedAt.set(currentJob.appliedAt);
+      // Fetch timeline
+      this.httpService.getTimeline(currentJob.id).subscribe({
+        next: (data) => this.timeline.set(data.map((item: any) => ({
+          id: item.id,
+          message: `Status changed to ${item.job_status?.status_name || item.status}`,
+          date: new Date(item.status_change_date).toLocaleString()
+        }))),
+        error: () => this.timeline.set([])
+      });
     });
   }
 
   updateEditedJob() {
-    const updated: Job = {
-      ...this.job(),
-      status: this.editedStatus() as any,
-      appliedAt: this.editedAppliedAt(),
-    };
-    this.updateJob.emit(updated);
+    this.updateJobStatus.emit({jobId: this.job().id, newStatus: this.editedStatus() as JobStatus});
   }
 }

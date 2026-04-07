@@ -167,7 +167,7 @@ export class ImportDialogComponent {
         const status = validStatuses.includes(rawStatus.toLowerCase().trim()) ? rawStatus.trim() : 'Saved/New';
 
         const job: Job = {
-          id: Date.now() + i,
+          id: `${Date.now() + i}`,
           title,
           company,
           url: values[headers.indexOf('url')] || '',

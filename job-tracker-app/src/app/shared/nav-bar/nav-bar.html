@@ -6,7 +6,7 @@
       <p
         class="flex items-center gap-2 text-slate-900 dark:text-white"
       >
-        <img class="h-10" src="/assets/logo.svg" alt="Apply with flow logo" />
+        <img class="h-10" src="/assets/main-logo.png" alt="Apply with flow logo" />
         <span class="self-center text-xl font-semibold whitespace-nowrap">Apply with flow</span>
     </p>
 
@@ -31,9 +31,9 @@
 
     <div class="flex items-center gap-3">
       <div class="hidden sm:flex flex-col text-right">
-        <span class="block text-sm font-medium text-slate-900 dark:text-white">Username</span>
+        <span class="block text-sm font-medium text-slate-900 dark:text-white">{{ user()?.first_name || 'User' }}</span>
         <span class="block text-xs text-slate-500 dark:text-slate-400 truncate"
-          >user@example.com</span
+          >{{ user()?.email || 'user@example.com' }}</span
         >
       </div>
 

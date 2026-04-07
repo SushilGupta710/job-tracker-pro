@@ -21,7 +21,7 @@ import { Job } from '../../services/job-tracker.service';
           <tr *ngFor="let job of jobs()" class="hover:bg-slate-50 dark:hover:bg-slate-900 transition">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
-                <img [src]="job.logo" [alt]="job.company + ' logo'" class="h-8 w-8 rounded-lg object-cover" />
+                <img [src]="job.logo || '/assets/default-logo.png'" [alt]="job.company + ' logo'" class="h-8 w-8 rounded-lg object-cover" />
                 <span class="font-medium text-slate-900 dark:text-white">{{ job.company }}</span>
               </div>
             </td>
@@ -55,7 +55,7 @@ import { Job } from '../../services/job-tracker.service';
 })
 export class JobListMobileComponent {
   jobs = input.required<Job[]>();
-  viewJob = output<number>();
+  viewJob = output<string>();
 
   getStatusClass(status: string): string {
     const statusClasses: Record<string, string> = {

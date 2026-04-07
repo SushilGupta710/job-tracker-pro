@@ -1,4 +1,10 @@
 <app-nav-bar></app-nav-bar>
+<app-tost-notification
+  *ngIf="toastMessage()"
+  [toastMessage]="toastMessage()"
+  [toastType]="toastType()"
+  (close)="toastMessage.set('')"
+></app-tost-notification>
 <div class="pt-20 px-4 py-4 dark:bg-slate-950 min-h-screen transition-all duration-300">
   <!-- Compact Header: Title + Search + Buttons in One Line -->
   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
@@ -14,6 +20,7 @@
       <div class="flex-1 sm:flex-1 min-w-80 sm:min-w-96">
         <app-job-tracker-header
           [searchTerm]="searchTerm()"
+          [disabled]="!hasJobs()"
           (searchTermChange)="onSearchChange($event)"
         ></app-job-tracker-header>
       </div>
@@ -26,6 +33,7 @@
           Add job
         </button>
         <app-job-tracker-actions-menu
+          [disableExcel]="filteredJobs().length === 0"
           (downloadExcel)="onDownloadExcel()"
           (openBulkImport)="onOpenBulkImport()"
         ></app-job-tracker-actions-menu>
@@ -74,6 +82,7 @@
   *ngIf="showDetailModal() && selectedJob()"
   [job]="selectedJob()!"
   (updateJob)="onUpdateJob($event)"
+  (updateJobStatus)="onUpdateJobStatus($event)"
   (deleteJob)="onDeleteJob($event)"
   (editJob)="onEditJob()"
   (viewJobLink)="onViewJobLink($event)"

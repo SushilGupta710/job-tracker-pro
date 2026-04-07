@@ -1,37 +1,53 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { HttpService } from '../appservice/http-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
-
-  constructor(private http: HttpClient) {}
+  constructor(private httpService: HttpService) {}
 
   registerUser(userData: any) {
-    return this.http.post(`${this.apiUrl}/signup`, userData);
+    return this.httpService.authSignup(userData);
   }
 
   loginUser(credentials: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/signin`, credentials);
+    return this.httpService.authSignin(credentials);
   }
 
   sendOtp(email: string) {
-    return this.http.post(`${this.apiUrl}/send-otp`, { email });
+    return this.httpService.authSendOtp(email);
   }
 
   verifyOtp(email: string, token: string) {
-    return this.http.post(`${this.apiUrl}/verify-otp`, { email, token });
+    return this.httpService.authVerifyOtp(email, token);
   }
 
   getGoogleLoginUrl() {
-    return this.http.get<{ url: string }>(`${this.apiUrl}/google`);
+    return this.httpService.authGoogleUrl();
   }
 
   sendPasswordReset(email: string) {
-    return this.http.post(`${this.apiUrl}/reset-password`, { email });
+    return this.httpService.authPasswordReset(email);
+  }
+
+  getUserProfile(userId: string) {
+    return this.httpService.getUserProfile(userId);
+  }
+
+  updateUserProfile(payload: any) {
+    return this.httpService.updateUserProfile(payload).pipe(
+      tap(() => this.updateUser(payload))
+    );
+  }
+
+  getToken() {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+    return localStorage.getItem('token') || '';
   }
 
   logout() {
@@ -45,7 +61,7 @@ export class AuthService {
     if (typeof window === 'undefined') {
       return false;
     }
-    return !!localStorage.getItem('token');
+    return !!this.getToken();
   }
 
   getUser() {

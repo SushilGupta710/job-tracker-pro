@@ -14,11 +14,13 @@ import { FormsModule } from '@angular/forms';
         placeholder="Search jobs, company..."
         [ngModel]="searchTerm()"
         (ngModelChange)="searchTermChange.emit($event)"
+        [disabled]="disabled()"
       />
     </div>
   `,
 })
 export class JobTrackerHeaderComponent {
   searchTerm = input('');
+  disabled = input<boolean>(false);
   searchTermChange = output<string>();
 }

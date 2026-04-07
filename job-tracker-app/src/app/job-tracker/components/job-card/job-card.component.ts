@@ -13,7 +13,7 @@ import { Job } from '../../services/job-tracker.service';
       (dragstart)="onDragStart($event)"
     >
       <div class="flex items-center gap-2" (click)="viewJob.emit()">
-        <img [src]="job().logo" [alt]="job().company + ' logo'" class="h-8 w-8 rounded-lg object-cover flex-shrink-0" />
+        <img [src]="job().logo || '/assets/default-logo.png'" [alt]="job().company + ' logo'" class="h-8 w-8 rounded-lg object-cover flex-shrink-0" />
         <div class="min-w-0 flex-1">
           <button
             type="button"
@@ -32,7 +32,7 @@ import { Job } from '../../services/job-tracker.service';
 })
 export class JobCardComponent {
   job = input.required<Job>();
-  dragStart = output<number>();
+  dragStart = output<string>();
   viewJob = output<void>();
 
   onDragStart(event: DragEvent) {

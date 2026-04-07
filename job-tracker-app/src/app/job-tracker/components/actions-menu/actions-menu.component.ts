@@ -23,7 +23,8 @@ import { CommonModule } from '@angular/common';
       <div *ngIf="isOpen()" class="absolute right-0 sm:right-0 left-0 sm:left-auto top-full z-50 mt-2 w-48 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
         <button
           type="button"
-          class="w-full px-4 py-3 text-left text-sm text-slate-900 hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800"
+          [disabled]="disableExcel()"
+          class="w-full px-4 py-3 text-left text-sm text-slate-900 hover:bg-slate-100 dark:text-white dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           (click)="onDownloadExcel()"
         >
           Download Excel
@@ -41,6 +42,7 @@ import { CommonModule } from '@angular/common';
 })
 export class JobTrackerActionsMenuComponent {
   isOpen = signal(false);
+  disableExcel = input<boolean>();
   downloadExcel = output<void>();
   openBulkImport = output<void>();
 

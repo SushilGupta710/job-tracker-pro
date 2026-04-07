@@ -1,15 +1,19 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { AuthService } from '../../services/auth-service';
+import { HttpService } from '../../appservice/http-service';
 
 export type JobStatus = 'Saved/New' | 'Applied' | 'Interviewing' | 'Offer' | 'Rejected';
 
 export interface JobTimelineItem {
-  id: number;
+  id: string | number;
   message: string;
   date: string;
 }
 
 export interface Job {
-  id: number;
+  id: string;
   title: string;
   company: string;
   url: string;
@@ -26,61 +30,23 @@ export interface Job {
   providedIn: 'root',
 })
 export class JobTrackerService {
-  private jobsSignal = signal<Job[]>([
-    {
-      id: 1,
-      title: 'Frontend Developer',
-      company: 'Acme Corp',
-      url: 'https://acme.com/careers/frontend',
-      salary: '₹80,000',
-      location: 'Remote',
-      description: 'Build and maintain web interfaces with a strong focus on clean design and accessibility.',
-      status: 'Saved/New',
-      appliedAt: '2026-04-03 10:30',
-      logo: '/assets/logo.svg',
-      timeline: [
-        { id: 1, message: 'New job created', date: '2026-04-03 10:30' },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Backend Engineer',
-      company: 'Beta Systems',
-      url: 'https://beta.systems/jobs/backend',
-      salary: '₹95,000',
-      location: 'Bangalore',
-      description: 'Design APIs, maintain microservices, and help automate deployment workflows.',
-      status: 'Applied',
-      appliedAt: '2026-03-28 15:20',
-      logo: '/assets/default-logo.png',
-      timeline: [
-        { id: 1, message: 'New job created', date: '2026-03-28 15:20' },
-        { id: 2, message: 'Status updated from Saved/New to Applied', date: '2026-03-29 09:40' },
-      ],
-    },
-    {
-      id: 3,
-      title: 'Product Designer',
-      company: 'Crescent Labs',
-      url: 'https://crescentlabs.com/apply/designer',
-      salary: '₹75,000',
-      location: 'Mumbai',
-      description: 'Create compelling user experiences and collaborate with product teams to ship design work.',
-      status: 'Interviewing',
-      appliedAt: '2026-03-25 12:10',
-      logo: '/assets/default-logo.png',
-      timeline: [
-        { id: 1, message: 'New job created', date: '2026-03-25 12:10' },
-        { id: 2, message: 'Status updated from Applied to Interviewing', date: '2026-03-26 11:00' },
-      ],
-    },
-  ]);
+  private backendUrl = 'http://localhost:3000/api';
+  private statusMap: Record<JobStatus, number> = {
+    'Saved/New': 1,
+    Applied: 2,
+    Interviewing: 3,
+    Offer: 4,
+    Rejected: 5,
+  };
 
+  private jobsSignal = signal<Job[]>([]);
   private searchTermSignal = signal('');
+  private statusesSignal = signal<JobStatus[]>(['Saved/New', 'Applied', 'Interviewing', 'Offer', 'Rejected']);
   readonly statuses: JobStatus[] = ['Saved/New', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
 
   readonly jobs = this.jobsSignal.asReadonly();
   readonly searchTerm = this.searchTermSignal.asReadonly();
+  readonly statusesDynamic = this.statusesSignal.asReadonly();
 
   readonly filteredJobs = computed(() => {
     const term = this.searchTermSignal().toLowerCase().trim();
@@ -97,40 +63,107 @@ export class JobTrackerService {
     });
   });
 
+  constructor(private httpService: HttpService, private authService: AuthService) {}
+
+  loadStatuses(): Observable<any[]> {
+    return this.httpService.getJobStatuses().pipe(
+      tap((statuses) => {
+        const mapped = statuses.map((s: any) => s.status_name as JobStatus);
+        this.statusesSignal.set(mapped);
+      })
+    );
+  }
+
   setSearchTerm(term: string) {
     this.searchTermSignal.set(term);
   }
 
-  addJob(job: Omit<Job, 'id'>) {
-    const newJob: Job = { ...job, id: Date.now() };
-    this.jobsSignal.update((jobs) => [newJob, ...jobs]);
-  }
+  loadJobs(): Observable<any[]> {
+    const user = this.authService.getUser();
+    if (!user?.id) {
+      return new Observable<any[]>((subscriber) => subscriber.complete());
+    }
 
-  updateJob(job: Job) {
-    this.jobsSignal.update((jobs) =>
-      jobs.map((j) => (j.id === job.id ? job : j))
+    return this.httpService.getJobsByUser(user.id).pipe(
+      tap((jobs) => {
+        this.jobsSignal.set(jobs.map((job) => this.convertBackendJob(job)));
+      })
     );
   }
 
-  deleteJob(jobId: number) {
-    this.jobsSignal.update((jobs) => jobs.filter((j) => j.id !== jobId));
+  addJob(job: Omit<Job, 'id'>): Observable<any> {
+    const payload = {
+      title: job.title,
+      company: job.company,
+      url: job.url,
+      salary: job.salary,
+      location: job.location,
+      description: job.description,
+      status_id: this.statusMap[job.status] ?? 1,
+      job_image_url: job.logo && job.logo !== '/assets/default-logo.png' ? job.logo : null,
+    };
+
+    return this.httpService.createJob(payload).pipe(
+      tap((data) => {
+        const record = Array.isArray(data) ? data[0] : data;
+        const createdJob = this.convertBackendJob(record);
+        this.jobsSignal.update((jobs) => [createdJob, ...jobs]);
+      })
+    );
   }
 
-  updateJobStatus(jobId: number, newStatus: JobStatus) {
-    this.jobsSignal.update((jobs) =>
-      jobs.map((job) => {
-        if (job.id === jobId) {
-          const updatedTimeline = [
-            {
-              id: job.timeline.length + 1,
-              message: `Status updated to ${newStatus}`,
-              date: new Date().toLocaleString(),
-            },
-            ...job.timeline,
-          ];
-          return { ...job, status: newStatus, timeline: updatedTimeline };
-        }
-        return job;
+  updateJob(job: Job): Observable<any> {
+    const payload = {
+      job_title: job.title,
+      job_company_name: job.company,
+      job_url: job.url,
+      job_salary: job.salary,
+      job_location: job.location,
+      job_description: job.description,
+      status_id: this.statusMap[job.status] ?? 1,
+      job_modified_date: new Date().toISOString(),
+    };
+
+    return this.httpService.updateJob(job.id, payload).pipe(
+      tap(() => {
+        this.jobsSignal.update((jobs) =>
+          jobs.map((j) => (j.id === job.id ? { ...job, appliedAt: payload.job_modified_date } : j))
+        );
+      })
+    );
+  }
+
+  deleteJob(jobId: string): Observable<any> {
+    return this.httpService.deleteJob(jobId).pipe(
+      tap(() => {
+        this.jobsSignal.update((jobs) => jobs.filter((job) => job.id !== jobId));
+      })
+    );
+  }
+
+  updateJobStatus(jobId: string, newStatus: JobStatus): Observable<any> {
+    const payload = {
+      status_id: this.statusMap[newStatus] ?? 1,
+    };
+
+    return this.httpService.patchJobStatus(jobId, payload).pipe(
+      tap(() => {
+        this.jobsSignal.update((jobs) =>
+          jobs.map((job) => {
+            if (job.id === jobId) {
+              const updatedTimeline = [
+                {
+                  id: job.timeline.length + 1,
+                  message: `Status updated to ${newStatus}`,
+                  date: new Date().toLocaleString(),
+                },
+                ...job.timeline,
+              ];
+              return { ...job, status: newStatus, timeline: updatedTimeline };
+            }
+            return job;
+          })
+        );
       })
     );
   }
@@ -154,7 +187,7 @@ export class JobTrackerService {
     const csvContent = [headers, ...rows]
       .map((row) => row.map((value) => `"${value.replace(/"/g, '""')}"`).join(','))
       .join('\n');
-    const BOM = '\uFEFF'; // Byte Order Mark for UTF-8
+    const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -170,7 +203,7 @@ export class JobTrackerService {
       .map((row) => row.map((value) => `"${value.replace(/"/g, '""')}"`).join(','))
       .join('\n');
 
-    const BOM = '\uFEFF'; // Byte Order Mark for UTF-8
+    const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -180,59 +213,39 @@ export class JobTrackerService {
     URL.revokeObjectURL(url);
   }
 
-  importJobs(file: File): Promise<{ success: boolean; message: string }> {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const content = reader.result as string;
-          const rows = content.split(/\r?\n/).filter((line) => line.trim());
+  importJobs(jobs: Job[]) {
+    const payload = jobs.map((job) => ({
+      title: job.title,
+      company: job.company,
+      url: job.url,
+      salary: job.salary,
+      location: job.location,
+      description: job.description,
+      status_id: this.statusMap[job.status] ?? 1,
+      job_modified_date: job.appliedAt || new Date().toISOString(),
+      job_image_url: job.logo && job.logo !== '/assets/default-logo.png' ? job.logo : null,
+    }));
 
-          if (rows.length <= 1) {
-            resolve({ success: false, message: 'Import file is empty or not in the expected template format.' });
-            return;
-          }
+    return this.httpService.bulkImportJobs(payload).pipe(
+      tap(() => {
+        this.loadJobs().subscribe();
+      })
+    );
+  }
 
-          const [headerRow, ...dataRows] = rows;
-          const headers = headerRow.split(',').map((col) => col.trim().toLowerCase());
-          const expected = ['jobtitle', 'companyname', 'joburl', 'salary', 'location', 'description', 'status'];
-
-          if (!expected.every((value) => headers.includes(value))) {
-            resolve({ success: false, message: 'The selected file must match the template columns exactly.' });
-            return;
-          }
-
-          const newItems: Job[] = dataRows
-            .map((row, index) => {
-              const values = row.split(',').map((value) => value.trim().replace(/^"|"$/g, ''));
-              return {
-                id: Date.now() + index,
-                title: values[headers.indexOf('jobtitle')] || '',
-                company: values[headers.indexOf('companyname')] || '',
-                url: values[headers.indexOf('joburl')] || '',
-                salary: values[headers.indexOf('salary')] || '',
-                location: values[headers.indexOf('location')] || '',
-                description: values[headers.indexOf('description')] || '',
-                status: (values[headers.indexOf('status')] as JobStatus) || 'Saved/New',
-                appliedAt: new Date().toLocaleString(),
-                logo: '/assets/logo.svg',
-                timeline: [{ id: 1, message: 'Imported from template', date: new Date().toLocaleString() }],
-              };
-            })
-            .filter((job) => job.title && job.company);
-
-          if (!newItems.length) {
-            resolve({ success: false, message: 'No valid rows were found in the import file.' });
-            return;
-          }
-
-          this.jobsSignal.update((jobs) => [...newItems, ...jobs]);
-          resolve({ success: true, message: `Successfully imported ${newItems.length} jobs.` });
-        } catch (error) {
-          resolve({ success: false, message: 'Error parsing the file. Please check the format.' });
-        }
-      };
-      reader.readAsText(file);
-    });
+  private convertBackendJob(raw: any): Job {
+    return {
+      id: String(raw.id),
+      title: raw.job_title || raw.title || '',
+      company: raw.job_company_name || raw.company || '',
+      url: raw.job_url || raw.url || '',
+      salary: raw.job_salary || raw.salary || '',
+      location: raw.job_location || raw.location || '',
+      description: raw.job_description || raw.description || '',
+      status: (raw.job_status?.status_name || raw.status || 'Saved/New') as JobStatus,
+      appliedAt: raw.job_applieddate || raw.job_modified_date || raw.appliedAt || '',
+      logo: raw.job_image_url || '/assets/default-logo.png',
+      timeline: raw.timeline || [],
+    };
   }
 }

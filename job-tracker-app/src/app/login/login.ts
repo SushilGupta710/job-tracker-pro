@@ -148,7 +148,7 @@ export class Login implements OnInit {
       next: () => {
         this.showToast('OTP sent to your email!');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.handleError(err);
       },
     });
@@ -170,7 +170,7 @@ export class Login implements OnInit {
         this.setMode('login');
         this.showToast('A password reset link has been sent to your email.');
       },
-      error: () => {
+      error: (err: any) => {
         this.isLoading.set(false);
         this.showToast('Could not send reset link. Try again later.');
       },
@@ -179,11 +179,11 @@ export class Login implements OnInit {
 
   continueWithGoogle() {
     this.authService.getGoogleLoginUrl().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.showToast('Redirecting to Google...');
         window.location.href = res.url;
       },
-      error: (err) => {
+      error: (err: any) => {
         this.handleError(err);
       },
     });
@@ -191,10 +191,22 @@ export class Login implements OnInit {
 
   private handleAuthSuccess(res: any) {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('token', res.session.access_token);
-      localStorage.setItem('user', JSON.stringify(res.user));
+      const token = res?.session?.access_token || res?.access_token;
+      const user = res?.user || {
+        id: res?.id,
+        first_name: res?.first_name,
+        last_name: res?.last_name,
+      };
+
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
     }
-    this.showToast('Login successful!','success');
+
+    this.showToast('Login successful!', 'success');
     setTimeout(() => {
       this.router.navigate(['/dashboard']);
     }, 800);
