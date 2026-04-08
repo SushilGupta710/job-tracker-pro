@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            width: 380px; 
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+        }
+        .jt-popup-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .jt-popup-header img {
+            width: 40px;
+            height: 40px;
+        }
+        .jt-popup-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .jt-popup-content {
+            padding: 24px;
+        }
+        .jt-input-group {
+            margin-bottom: 16px;
+        }
+        .jt-input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .jt-input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .jt-input-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .jt-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .jt-btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .jt-btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .jt-btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .jt-btn-danger:hover {
+            background: #dc2626;
+        }
+        .jt-user-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .jt-user-avatar {
+            width: 60px;
+            height: 60px;
+            background: #e0e7ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-weight: bold;
+            color: #2563eb;
+            font-size: 24px;
+        }
+        .jt-status {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .jt-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .jt-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .jt-status.loading {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .jt-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 20px 0;
+        }
+        .jt-links {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .jt-links button {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="jt-popup-header">
+        <img src="icons/main-logo.png" alt="Job Tracker Logo" />
+        <h1>Job Tracker</h1>
+    </div>
+
+    <div class="jt-popup-content">
+        <div id="jt-login-form">
+            <h2 style="font-size: 18px; margin-bottom: 20px;">Login to Extension</h2>
+            <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
+                <strong>Note:</strong> Extension authentication is separate from your web app login. Please sign in here to save jobs from browser pages.
+            </p>
+            <div class="jt-input-group">
+                <label for="jt-email">Email</label>
+                <input type="email" id="jt-email" placeholder="your@email.com">
+            </div>
+            <div class="jt-input-group">
+                <label for="jt-password">Password</label>
+                <input type="password" id="jt-password" placeholder="Enter password">
+            </div>
+            <button id="jt-login-btn" class="jt-btn jt-btn-primary">Sign In</button>
+            <div id="jt-login-status" class="jt-status" style="display: none;"></div>
+        </div>
+
+        <div id="jt-user-info" style="display: none;">
+            <div class="jt-user-section">
+                <div class="jt-user-avatar" id="jt-user-avatar">👤</div>
+                <h2 style="font-size: 16px; margin-bottom: 4px;" id="jt-user-name"></h2>
+                <p style="color: #6b7280; font-size: 13px;" id="jt-user-email"></p>
+                <p style="color: #10b981; font-size: 12px; margin-top: 8px;">Logged In</p>
+            </div>
+
+            <div class="jt-divider"></div>
+
+            <div style="background: #f0f9ff; border-left: 4px solid #2563eb; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+                <p style="font-size: 13px; color: #1e40af;">
+                    Your extension is ready! Visit job sites and click the floating button to save jobs directly.
+                </p>
+            </div>
+
+            <div class="jt-links">
+                <button id="jt-open-dashboard" class="jt-btn jt-btn-primary">Dashboard</button>
+                <button id="jt-logout-btn" class="jt-btn jt-btn-danger">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

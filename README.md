@@ -108,3 +108,6 @@ To run the full project locally:
 ## 📝 License
 
 This project is created for portfolio and learning purposes. You are welcome to explore and use it as a reference.
+
+## new extension folder
+cd job-tracker-extension

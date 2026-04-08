@@ -7,6 +7,11 @@ const app = express();
 app.set('etag', false);
 app.use(cors());
 app.use(express.json());
+app.use(cors({
+    origin: '*', // During development, this is easiest
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
@@ -132,8 +137,7 @@ app.post('/api/jobs/create', authenticateToken, async (req, res) => {
         job_description: job.description,
         status_id: job.status_id || 1,
         job_image_url: job.job_image_url || null, // Fixed: was 'logo'
-        source_id: 1, // Default to Manual
-        // job_modified_date: null, // Keep it null initially as per your requirement
+        source_id: job.source_id || 1, // Use provided source_id or default to Manual
     };
 
     // 1. Insert the Job
