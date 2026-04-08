@@ -127,7 +127,7 @@ export class Login implements OnInit {
       next: () => {
         this.isLoading.set(false);
         this.setMode('login');
-        this.showToast('Account created successfully! Please login.');
+        this.showToast('Account created successfully! Please login.','success');
       },
       error: (err) => {
         this.isLoading.set(false);
@@ -146,7 +146,7 @@ export class Login implements OnInit {
 
     this.authService.sendOtp(email).subscribe({
       next: () => {
-        this.showToast('OTP sent to your email!');
+        this.showToast('OTP sent to your email!','warning');
       },
       error: (err: any) => {
         this.handleError(err);
@@ -168,7 +168,7 @@ export class Login implements OnInit {
       next: () => {
         this.isLoading.set(false);
         this.setMode('login');
-        this.showToast('A password reset link has been sent to your email.');
+        this.showToast('A password reset link has been sent to your email.','warning');
       },
       error: (err: any) => {
         this.isLoading.set(false);
@@ -180,7 +180,7 @@ export class Login implements OnInit {
   continueWithGoogle() {
     this.authService.getGoogleLoginUrl().subscribe({
       next: (res: any) => {
-        this.showToast('Redirecting to Google...');
+        this.showToast('Redirecting to Google...','warning');
         window.location.href = res.url;
       },
       error: (err: any) => {

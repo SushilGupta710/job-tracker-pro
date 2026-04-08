@@ -305,5 +305,16 @@ app.post('/api/jobs/bulk-import', authenticateToken, async (req, res) => {
     });
 });
 
+app.get('/api/auth/google', async (req, res) => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'http://localhost:4200/dashboard', // Where Angular is running
+    }
+  });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ url: data.url }); // Send the Google login link to Angular
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
