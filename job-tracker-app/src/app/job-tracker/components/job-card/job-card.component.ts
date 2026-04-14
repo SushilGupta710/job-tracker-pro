@@ -18,8 +18,9 @@ import { Job } from '../../services/job-tracker.service';
           <button
             type="button"
             class="text-left text-xs font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 truncate"
+            [title]="job().title"
           >
-            {{ job().title }}
+            {{ truncateTitle(job().title) }}
           </button>
           <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ job().company }}</p>
         </div>
@@ -41,6 +42,11 @@ export class JobCardComponent {
       event.dataTransfer.setData('text/plain', JSON.stringify({ jobId: this.job().id }));
     }
     this.dragStart.emit(this.job().id);
+  }
+
+  truncateTitle(value: string): string {
+    if (!value) return '';
+    return value.length > 30 ? `${value.slice(0, 27)}...` : value;
   }
 
   getRelativeTime(dateStr: string): string {

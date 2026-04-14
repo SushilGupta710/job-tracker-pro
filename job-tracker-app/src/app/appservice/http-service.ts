@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-import { finalize, Observable } from 'rxjs';
+import { catchError, finalize, Observable, throwError } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +10,7 @@ export class HttpService {
   private backendUrl = 'http://localhost:3000/api';
   loading = signal(false);
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   private getHeaders() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -20,7 +21,20 @@ export class HttpService {
 
   private request<T>(observable: Observable<T>): Observable<T> {
     this.loading.set(true);
-    return observable.pipe(finalize(() => this.loading.set(false)));
+    return observable.pipe(
+      catchError((error: any) => {
+        if (error?.status === 401 || error?.status === 403) {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('tokenExpiry');
+          }
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => error);
+      }),
+      finalize(() => this.loading.set(false))
+    );
   }
 
   get<T>(path: string, params?: HttpParams): Observable<T> {

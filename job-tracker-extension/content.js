@@ -1,11 +1,48 @@
 // Keyword array for detecting job listing pages - easily extensible
 const JOB_KEYWORDS = [
-    'job', 'position', 'career', 'hiring', 'vacancy', 'apply',
-    'employment', 'opportunity', 'role', 'opening', 'recruitment',
-    'salary', 'experience', 'qualifications', 'responsibilities'
+    'careers',
+    'job opening',
+    'open position',
+    'vacancy',
+    'hiring',
+    'job description',
+    'responsibilities',
+    'requirements',
+    'qualifications',
+    'skills',
+    'experience',
+    'location',
+    'employment type',
+    'full-time',
+    'full time',
+    'part-time',
+    'remote',
+    'salary',
+    'benefits',
+    'apply now',
+    'easy apply',
+    'submit application',
+    'current openings',
+    'search jobs',
+    'join our team',
+    'posted',
+    'job details',
+    'career',
+    'job',
+    'position',
+    'opportunity',
+    'role',
+    'recruitment'
 ];
 
 const JOB_SITES = [
+    'linkedin.com/jobs/',
+    'naukri.com/job-listings',
+    'myworkdayjobs.com',
+    'workdayjobs.com',
+    'csod.com/ux/ats/careersite',
+    'eures/portal',
+    'talent.com/jobs',
     'linkedin.com',
     'indeed.com',
     'lever.co',
@@ -21,11 +58,17 @@ function init() {
     // Prevent infinite loop: Don't run if we are inside our own extension frame
     if (window.location.href.includes('chrome-extension://')) return;
 
-    const currentUrl = window.location.hostname.toLowerCase();
-    const isKnownJobSite = JOB_SITES.some(site => currentUrl.includes(site));
-    
+    const currentUrl = window.location.href.toLowerCase();
     const pageText = document.body.innerText.toLowerCase();
-    const isJobPage = isKnownJobSite || JOB_KEYWORDS.some(keyword => pageText.includes(keyword));
+
+    const isKnownJobSite = JOB_SITES.some(site => currentUrl.includes(site));
+    const hasApplyButton = Array.from(document.querySelectorAll('button, a, input[type="button"], input[type="submit"]'))
+        .some(el => {
+            const text = ((el.innerText || el.value || '')).trim().toLowerCase();
+            return /apply|apply now|submit application/.test(text);
+        });
+
+    const isJobPage = isKnownJobSite || hasApplyButton || JOB_KEYWORDS.some(keyword => pageText.includes(keyword));
 
     // Only inject if it's a job page AND hasn't been injected yet
     if (isJobPage && !document.getElementById('jt-extension-root')) {
@@ -141,9 +184,10 @@ function injectSlider() {
         input, textarea, button { font-family: system-ui, -apple-system, sans-serif !important; }
         .hidden { display: none !important; }
     </style>
-    <div class="jt-wrapper" id="jt-btn-trigger" style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); background: #2563eb; color: white; padding: 12px; cursor: pointer; border-radius: 8px 0 0 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); z-index: 9999999; display: flex; align-items: center; gap: 8px; font-weight: bold; user-select: none; border: none; transition: background 0.2s;">
+    <div class="jt-wrapper" id="jt-btn-trigger" style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); background: #2563eb; color: white; padding: 12px 30px 12px 12px; cursor: pointer; border-radius: 8px 0 0 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); z-index: 9999999; display: flex; align-items: center; gap: 8px; font-weight: bold; user-select: none; border: none; transition: background 0.2s;">
         <img src="${logoUrl}" style="width: 24px; height: 24px; display: block;" />
         <span id="jt-btn-text">Save Job</span>
+        <button id="jt-hide-trigger" style="position: absolute; top: 6px; right: 6px; background: transparent; border: none; color: white; font-size: 14px; cursor: pointer; padding: 0; line-height: 1;">✕</button>
     </div>
 
     <div class="jt-wrapper" id="jt-slider" style="position: fixed; top: 0; right: -400px; width: 400px; height: 100vh; background: #f8fafc; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); z-index: 9999998; transition: right 0.3s ease; display: flex; flex-direction: column; overflow: hidden;">
@@ -212,6 +256,12 @@ function injectSlider() {
         btnText.textContent = isOpen ? 'Save Job' : '✕ Close';
         trigger.style.display = isOpen ? 'flex' : 'none';
         checkAuthStatus(shadow);
+    };
+
+    const hideTrigger = shadow.querySelector('#jt-hide-trigger');
+    hideTrigger.onclick = (event) => {
+        event.stopPropagation();
+        host.style.display = 'none';
     };
 
     shadow.querySelector('#jt-logout').onclick = () => {
