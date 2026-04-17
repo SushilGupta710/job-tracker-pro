@@ -25,8 +25,8 @@ export class AuthService {
     return this.httpService.authVerifyOtp(email, token);
   }
 
-  getGoogleLoginUrl() {
-    return this.httpService.authGoogleUrl();
+  getGoogleLoginUrl(redirectUrl: string) {
+    return this.httpService.authGoogleUrl(redirectUrl);
   }
 
   sendPasswordReset(email: string) {

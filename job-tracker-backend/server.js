@@ -340,15 +340,6 @@ const swaggerSpec = {
                 },
             },
         },
-        '/api/auth/google': {
-            get: {
-                tags: ['Auth'],
-                summary: 'Sign in with Google OAuth',
-                responses: {
-                    200: { description: 'OAuth URL returned' },
-                },
-            },
-        },
     },
 };
 
@@ -475,6 +466,7 @@ app.post('/api/jobs/create', authenticateToken, async (req, res) => {
         job_image_url: job.job_image_url || null, // Fixed: was 'logo'
         source_id: job.source_id || 1, // Use provided source_id or default to Manual
     };
+    console.log("Creating job with payload:", payload);
 
     // 1. Insert the Job
     const { data, error } = await supabase
@@ -646,14 +638,18 @@ app.post('/api/jobs/bulk-import', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/auth/google', async (req, res) => {
+  // Get the redirect URL from the query parameters
+  const clientRedirectTo = req.query.redirectTo || 'http://localhost:4200/login';
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: 'http://localhost:4200/dashboard', // Where Angular is running
+      redirectTo: clientRedirectTo, 
     }
   });
+
   if (error) return res.status(400).json({ error: error.message });
-  res.json({ url: data.url }); // Send the Google login link to Angular
+  res.json({ url: data.url }); 
 });
 
 // const PORT = process.env.PORT || 3000;
