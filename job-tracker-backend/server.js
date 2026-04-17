@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
+const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 
 const app = express();
@@ -17,6 +18,337 @@ const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+const swaggerSpec = {
+    openapi: '3.0.0',
+    info: {
+        title: 'Job Tracker API',
+        version: '1.0.0',
+        description: 'Backend API for the Job Tracker application',
+    },
+    servers: [
+        {
+            url: 'http://localhost:3000',
+            description: 'Local development server',
+        },
+    ],
+    components: {
+        securitySchemes: {
+            bearerAuth: {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+            },
+        },
+        schemas: {
+            AuthResponse: {
+                type: 'object',
+                properties: {
+                    user: { type: 'object' },
+                    session: { type: 'object' },
+                },
+            },
+            Job: {
+                type: 'object',
+                properties: {
+                    id: { type: 'integer' },
+                    job_title: { type: 'string' },
+                    job_company_name: { type: 'string' },
+                    job_location: { type: 'string' },
+                    job_url: { type: 'string' },
+                    job_salary: { type: 'string' },
+                    job_description: { type: 'string' },
+                    status_id: { type: 'integer' },
+                },
+            },
+        },
+    },
+    security: [
+        {
+            bearerAuth: [],
+        },
+    ],
+    paths: {
+        '/api/auth/signup': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Register a new user',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    email: { type: 'string' },
+                                    password: { type: 'string' },
+                                    first_name: { type: 'string' },
+                                    last_name: { type: 'string' },
+                                },
+                                required: ['email', 'password'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    201: {
+                        description: 'User created',
+                    },
+                    400: {
+                        description: 'Bad request',
+                    },
+                },
+            },
+        },
+        '/api/auth/signin': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Sign in a user',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    email: { type: 'string' },
+                                    password: { type: 'string' },
+                                },
+                                required: ['email', 'password'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: {
+                        description: 'Authentication successful',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    $ref: '#/components/schemas/AuthResponse',
+                                },
+                            },
+                        },
+                    },
+                    401: {
+                        description: 'Unauthorized',
+                    },
+                },
+            },
+        },
+        '/api/user': {
+            get: {
+                tags: ['User'],
+                summary: 'Get current user profile',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'User profile returned' },
+                    401: { description: 'Unauthorized' },
+                },
+            },
+        },
+        '/api/jobs/statuses': {
+            get: {
+                tags: ['Jobs'],
+                summary: 'List all job statuses',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Statuses returned' },
+                },
+            },
+        },
+        '/api/jobs': {
+            get: {
+                tags: ['Jobs'],
+                summary: 'Get all jobs for current user',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Jobs returned' },
+                },
+            },
+        },
+        '/api/jobs/create': {
+            post: {
+                tags: ['Jobs'],
+                summary: 'Create a new job',
+                security: [{ bearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Job',
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    201: { description: 'Job created' },
+                },
+            },
+        },
+        '/api/jobs/update/{jobId}': {
+            put: {
+                tags: ['Jobs'],
+                summary: 'Update a job',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'jobId',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer' },
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: { type: 'object' },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Job updated' },
+                },
+            },
+        },
+        '/api/jobs/{jobId}': {
+            delete: {
+                tags: ['Jobs'],
+                summary: 'Delete a job',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'jobId',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer' },
+                    },
+                ],
+                responses: {
+                    200: { description: 'Job deleted' },
+                },
+            },
+        },
+        '/api/jobs/status/{jobId}': {
+            patch: {
+                tags: ['Jobs'],
+                summary: 'Update only job status',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'jobId',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer' },
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    status_id: { type: 'integer' },
+                                },
+                                required: ['status_id'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    200: { description: 'Status updated' },
+                },
+            },
+        },
+        '/api/jobs/timeline/{jobId}': {
+            get: {
+                tags: ['Jobs'],
+                summary: 'Get job timeline',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'jobId',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer' },
+                    },
+                ],
+                responses: {
+                    200: { description: 'Timeline returned' },
+                },
+            },
+        },
+        '/api/jobs/search': {
+            get: {
+                tags: ['Jobs'],
+                summary: 'Search user jobs',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'query',
+                        in: 'query',
+                        required: true,
+                        schema: { type: 'string' },
+                    },
+                ],
+                responses: {
+                    200: { description: 'Search results returned' },
+                },
+            },
+        },
+        '/api/jobs/export': {
+            get: {
+                tags: ['Jobs'],
+                summary: 'Export jobs',
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: { description: 'Export data returned' },
+                },
+            },
+        },
+        '/api/jobs/bulk-import': {
+            post: {
+                tags: ['Jobs'],
+                summary: 'Bulk import jobs',
+                security: [{ bearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                properties: {
+                                    jobs: {
+                                        type: 'array',
+                                        items: { type: 'object' },
+                                    },
+                                },
+                                required: ['jobs'],
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    201: { description: 'Jobs imported' },
+                },
+            },
+        },
+        '/api/auth/google': {
+            get: {
+                tags: ['Auth'],
+                summary: 'Sign in with Google OAuth',
+                responses: {
+                    200: { description: 'OAuth URL returned' },
+                },
+            },
+        },
+    },
+};
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // --- 1. JWT VERIFICATION MIDDLEWARE ---
 const authenticateToken = async (req, res, next) => {
