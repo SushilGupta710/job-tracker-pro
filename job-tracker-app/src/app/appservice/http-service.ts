@@ -7,7 +7,9 @@ import { Router } from '@angular/router';
   providedIn: 'root',
 })
 export class HttpService {
-  private backendUrl = 'http://localhost:3000/api';
+  //   private backendUrl = 'http://localhost:3000/api';//local URL
+  private backendUrl = 'https://smart-job-tracker-api-w44d.onrender.com/api';
+
   loading = signal(false);
 
   constructor(private http: HttpClient, private router: Router) {}

@@ -320,7 +320,7 @@ top: 50%; // Vertical position (center)
 Update in `popup.js` and `content.js`:
 ```javascript
 // API endpoints
-'http://localhost:3000/api' // Backend API
+'https://smart-job-tracker-api-w44d.onrender.com/api' // Backend API
 'http://localhost:4200/dashboard' // Main app dashboard
 ```
 

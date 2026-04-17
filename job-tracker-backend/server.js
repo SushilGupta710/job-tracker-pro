@@ -28,6 +28,10 @@ const swaggerSpec = {
     },
     servers: [
         {
+        url: 'https://smart-job-tracker-api-w44d.onrender.com/',
+        description: 'Production server (Render)'
+      },
+        {
             url: 'http://localhost:3000',
             description: 'Local development server',
         },
@@ -652,5 +656,9 @@ app.get('/api/auth/google', async (req, res) => {
   res.json({ url: data.url }); // Send the Google login link to Angular
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+const port = process.env.PORT || 3000; 
+app.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://localhost:${port}`);
+});

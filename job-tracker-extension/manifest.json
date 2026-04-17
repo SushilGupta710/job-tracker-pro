@@ -9,7 +9,7 @@
     "48": "icons/main-logo.png",
     "128": "icons/main-logo.png"
   },
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": [
     "http://localhost:3000/*",
     "http://localhost:4200/*",

@@ -258,7 +258,7 @@ All Phase 2 requirements have been implemented and documented. The extension is 
 **File**: `popup.js` (line ~31 and ~88)
 ```javascript
 // Change from:
-'http://localhost:3000/api/auth/signin'
+'https://smart-job-tracker-api-w44d.onrender.com/api/auth/signin'
 // Change API as needed
 ```
 
