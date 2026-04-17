@@ -239,18 +239,20 @@ private handleGoogleHash(hash: string) {
     });
   }
 
-  continueWithGoogle() {
-    this.authService.getGoogleLoginUrl().subscribe({
-      next: (res: any) => {
-        this.showToast('Redirecting to Google...','warning');
-        window.location.href = res.url;
-      },
-      error: (err: any) => {
-        this.handleError(err);
-      },
-    });
-  }
+continueWithGoogle() {
+  // This detects if you are on localhost:4200 or apply-flow-app-flame.vercel.app
+  const currentOrigin = window.location.origin; 
+  const redirectTo = `${currentOrigin}/login`;
 
+  // Pass this redirectTo to your service
+  this.authService.getGoogleLoginUrl(redirectTo).subscribe({
+    next: (res: any) => {
+      // res.url is the Supabase URL, but it needs to include the redirect override
+      window.location.href = res.url;
+    },
+    error: (err: any) => this.handleError(err)
+  });
+}
   private handleAuthSuccess(res: any) {
     if (isPlatformBrowser(this.platformId)) {
       const token = res?.session?.access_token || res?.access_token;

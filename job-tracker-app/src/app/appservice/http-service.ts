@@ -100,10 +100,10 @@ export class HttpService {
     return this.post('/auth/reset-password', { email });
   }
 
-  authGoogleUrl() {
-    return this.get<{ url: string }>('/auth/google');
+  authGoogleUrl(redirectUrl: string) {
+    const params = new HttpParams().set('redirectTo', redirectUrl);
+      return this.get<{ url: string }>('/auth/google', params);
   }
-
   getUserProfile() {
     return this.get(`/user`);
   }
