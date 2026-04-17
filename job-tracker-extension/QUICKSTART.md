@@ -50,7 +50,7 @@
 Find and update:
 ```javascript
 // For production
-'http://localhost:3000/api'     → 'https://yourdomain.com/api'
+'https://smart-job-tracker-api-w44d.onrender.com/api'     → 'https://yourdomain.com/api'
 'http://localhost:4200/dashboard' → 'https://yourdomain.com/dashboard'
 ```
 
@@ -141,7 +141,7 @@ Look for hex colors and update:
 
 **Solution**:
 1. Verify email/password are correct
-2. Check backend API is running (`http://localhost:3000/api`)
+2. Check backend API is running (`https://smart-job-tracker-api-w44d.onrender.com/api`)
 3. Open browser console (F12) → Console tab → check errors
 4. Verify manifest.json has correct host permissions
 

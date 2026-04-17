@@ -50,10 +50,70 @@ export class Login implements OnInit {
   }
 
   ngOnInit() {
-    if (isPlatformBrowser(this.platformId) && this.authService.isAuthenticated()) {
+    // if (isPlatformBrowser(this.platformId) && this.authService.isAuthenticated()) {
+    //   this.router.navigate(['/dashboard']);
+    // }
+    if (isPlatformBrowser(this.platformId)) {
+    // 1. Check if user is already logged in via localStorage
+    if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    // 2. Check if we just returned from Google (Token is in the URL Hash)
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      this.handleGoogleHash(hash);
     }
   }
+  }
+private handleGoogleHash(hash: string) {
+  const params = new URLSearchParams(hash.substring(1));
+  const accessToken = params.get('access_token');
+  const expiresIn = params.get('expires_in');
+
+  if (accessToken) {
+    // 1. Save Token
+    localStorage.setItem('token', accessToken);
+    if (expiresIn) {
+      this.authService.setTokenExpiry(Number(expiresIn));
+    }
+
+    // 2. Extract User Data from the JWT
+    try {
+      // The JWT is divided into 3 parts by dots. The middle part (index 1) has the data.
+      const base64Url = accessToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+
+      // 3. Map Google/Supabase metadata to your User object format
+      const userMetadata = payload.user_metadata || {};
+      const user = {
+        id: payload.sub,
+        email: payload.email,
+        first_name: userMetadata.full_name?.split(' ')[0] || userMetadata.name?.split(' ')[0] || 'User',
+        last_name: userMetadata.full_name?.split(' ').slice(1).join(' ') || '',
+        picture: userMetadata.avatar_url || userMetadata.picture
+      };
+
+      // 4. Save User to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      
+    } catch (e) {
+      console.error('Error decoding Google user data', e);
+      // Fallback: Save a generic user object so the app doesn't crash
+      localStorage.setItem('user', JSON.stringify({ first_name: 'Google', last_name: 'User' }));
+    }
+
+    // 5. Cleanup and Redirect
+    this.showToast('Login successful!', 'success');
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    setTimeout(() => {
+      this.router.navigate(['/dashboard']);
+    }, 800);
+  }
+}
 
   setMode(mode: 'login' | 'signup' | 'forgot') {
     this.mode = mode;
@@ -208,12 +268,36 @@ export class Login implements OnInit {
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
       }
+      this.emitAuthSyncEvent('login', token, user, res?.session?.expires_in || res?.expires_in);
     }
 
     this.showToast('Login successful!', 'success');
     setTimeout(() => {
       this.router.navigate(['/dashboard']);
     }, 800);
+  }
+
+  private emitAuthSyncEvent(type: 'login' | 'logout', token?: string, user?: any, expiresIn?: number) {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const eventPayload: any = {
+      type,
+      ts: Date.now(),
+    };
+
+    if (token) {
+      eventPayload.token = token;
+    }
+    if (user) {
+      eventPayload.user = user;
+    }
+    if (expiresIn != null) {
+      eventPayload.expires_in = expiresIn;
+    }
+
+    window.localStorage.setItem('jobTrackerAuthSync', JSON.stringify(eventPayload));
   }
 
   private handleError(err: any) {

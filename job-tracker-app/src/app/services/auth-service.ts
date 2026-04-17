@@ -79,8 +79,25 @@ export class AuthService {
     return expiry !== null && Date.now() >= expiry;
   }
 
+  private emitAuthSyncEvent(payload: Record<string, any>) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const eventPayload = { ...payload, ts: Date.now() };
+    localStorage.setItem('jobTrackerAuthSync', JSON.stringify(eventPayload));
+
+    try {
+      const event = new CustomEvent('jobTrackerAuthSync', { detail: eventPayload });
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.warn('Unable to dispatch auth sync event', error);
+    }
+  }
+
   logout() {
     if (typeof window !== 'undefined') {
+      this.emitAuthSyncEvent({ type: 'logout' });
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('tokenExpiry');

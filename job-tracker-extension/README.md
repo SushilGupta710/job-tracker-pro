@@ -86,7 +86,7 @@ The extension uses Chrome's Shadow DOM to fully isolate its UI from the page's D
 ### API Integration
 - **Login**: `POST /api/auth/signin`
 - **Save Job**: `POST /api/jobs/create` with `source_id: 2`
-- Backend URL: `http://localhost:3000/api`
+- Backend URL: `https://smart-job-tracker-api-w44d.onrender.com/api`
 - Main App URL: `http://localhost:4200`
 
 ## Customization

@@ -15,7 +15,7 @@ export class NavBarComponent {
   isDropdownOpen = false;
   isMobileMenuOpen = false;
   currentNav = signal<'dashboard' | 'job-tracker'>('dashboard');
-  user = signal<{ first_name?: string; email?: string } | null>(null);
+  user = signal<{ first_name?: string; email?: string; picture?: string } | null>(null);
 
   constructor(
     private authService: AuthService,

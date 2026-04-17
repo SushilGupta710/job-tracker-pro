@@ -54,6 +54,8 @@ const JOB_SITES = [
     'dice.com'
 ];
 
+const AUTH_SYNC_KEY = 'jobTrackerAuthSync';
+
 function init() {
     // Prevent infinite loop: Don't run if we are inside our own extension frame
     if (window.location.href.includes('chrome-extension://')) return;
@@ -265,7 +267,10 @@ function injectSlider() {
     };
 
     shadow.querySelector('#jt-logout').onclick = () => {
-        chrome.storage.local.remove(['token', 'user'], () => checkAuthStatus(shadow));
+        chrome.storage.local.remove(['token', 'user'], () => {
+            propagateLogoutToApp();
+            checkAuthStatus(shadow);
+        });
     };
 
     shadow.querySelector('#jt-close-slider').onclick = () => {
@@ -374,6 +379,126 @@ function saveJob(shadow) {
         });
     });
 }
+
+function isAppHost() {
+    return window.location.hostname === 'localhost' && window.location.port === '4200';
+}
+
+function getAppAuthState() {
+    const token = window.localStorage.getItem('token');
+    const user = window.localStorage.getItem('user');
+    return token && user ? { token, user: JSON.parse(user) } : null;
+}
+
+function syncAuthFromApp() {
+    if (!isAppHost()) {
+        return false;
+    }
+
+    const authState = getAppAuthState();
+    if (!authState) {
+        return false;
+    }
+
+    chrome.storage.local.get(['token'], (result) => {
+        if (!result.token || result.token !== authState.token) {
+            chrome.storage.local.set({ token: authState.token, user: authState.user });
+        }
+    });
+    return true;
+}
+
+function clearExtensionAuth() {
+    chrome.storage.local.remove(['token', 'user', 'loginTime']);
+}
+
+function propagateLogoutToApp() {
+    chrome.runtime.sendMessage({ action: 'logoutFromContent' }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.warn('Logout sync request failed:', chrome.runtime.lastError.message);
+        }
+    });
+}
+
+function clearAppAuth() {
+    if (!isAppHost()) {
+        return;
+    }
+    window.localStorage.removeItem('token');
+    window.localStorage.removeItem('user');
+    window.localStorage.removeItem('tokenExpiry');
+    window.localStorage.setItem(AUTH_SYNC_KEY, JSON.stringify({ type: 'logout', ts: Date.now() }));
+    window.location.reload();
+}
+
+function setAppAuth(token, user, expiresIn) {
+    if (!isAppHost()) {
+        return;
+    }
+    window.localStorage.setItem('token', token);
+    window.localStorage.setItem('user', JSON.stringify(user));
+    if (expiresIn != null) {
+        const expiryTime = Date.now() + expiresIn * 1000;
+        window.localStorage.setItem('tokenExpiry', expiryTime.toString());
+    }
+    window.localStorage.setItem(AUTH_SYNC_KEY, JSON.stringify({ type: 'login', token, user, expires_in: expiresIn, ts: Date.now() }));
+    window.location.reload();
+}
+
+if (isAppHost()) {
+    const syncHandler = (payload) => {
+        if (!payload || !payload.type) {
+            return;
+        }
+
+        if (payload.type === 'login' && payload.token && payload.user) {
+            chrome.storage.local.set({ token: payload.token, user: payload.user });
+        }
+
+        if (payload.type === 'logout') {
+            clearExtensionAuth();
+        }
+    };
+
+    window.addEventListener('storage', (event) => {
+        if (event.key !== AUTH_SYNC_KEY || !event.newValue) {
+            return;
+        }
+
+        try {
+            const payload = JSON.parse(event.newValue);
+            syncHandler(payload);
+        } catch (error) {
+            console.warn('Failed to parse auth sync event', error);
+        }
+    });
+
+    window.addEventListener('jobTrackerAuthSync', (event) => {
+        try {
+            syncHandler(event.detail);
+        } catch (error) {
+            console.warn('Failed to handle auth sync custom event', error);
+        }
+    });
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'syncAuthFromApp') {
+        const synced = syncAuthFromApp();
+        sendResponse({ synced });
+        return true;
+    }
+    if (message.action === 'logoutFromExtension') {
+        clearAppAuth();
+        sendResponse({ cleared: true });
+        return true;
+    }
+    if (message.action === 'loginFromExtension') {
+        setAppAuth(message.token, message.user, message.expires_in);
+        sendResponse({ synced: true });
+        return true;
+    }
+});
 
 // Initial Run
 init();

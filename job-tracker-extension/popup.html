@@ -142,7 +142,7 @@
         <div id="jt-login-form">
             <h2 style="font-size: 18px; margin-bottom: 20px;">Login to Extension</h2>
             <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
-                <strong>Note:</strong> Extension authentication is separate from your web app login. Please sign in here to save jobs from browser pages.
+                <strong>Note:</strong> Extension auth is separate from the web app, but if you are already signed in on the web app, it can sync your Google login automatically.
             </p>
             <div class="jt-input-group">
                 <label for="jt-email">Email</label>
@@ -153,6 +153,7 @@
                 <input type="password" id="jt-password" placeholder="Enter password">
             </div>
             <button id="jt-login-btn" class="jt-btn jt-btn-primary">Sign In</button>
+            <button id="jt-google-btn" class="jt-btn" style="margin-top: 10px; background: #ffffff; color: #111827; border: 1px solid #d1d5db;">Continue with Google</button>
             <div id="jt-login-status" class="jt-status" style="display: none;"></div>
         </div>
 

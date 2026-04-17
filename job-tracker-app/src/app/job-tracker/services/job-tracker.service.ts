@@ -32,7 +32,6 @@ export interface Job {
   providedIn: 'root',
 })
 export class JobTrackerService {
-  private backendUrl = 'http://localhost:3000/api';
   private statusMap: Record<JobStatus, number> = {
     'Saved/New': 1,
     Applied: 2,
