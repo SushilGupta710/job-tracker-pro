@@ -47,13 +47,43 @@ export class AuthService {
     if (typeof window === 'undefined') {
       return '';
     }
+    if (this.isTokenExpired()) {
+      this.logout();
+      return '';
+    }
     return localStorage.getItem('token') || '';
+  }
+
+  setTokenExpiry(expiresInSeconds: number) {
+    if (typeof window === 'undefined' || expiresInSeconds == null) {
+      return;
+    }
+    const expiryTime = Date.now() + expiresInSeconds * 1000;
+    localStorage.setItem('tokenExpiry', expiryTime.toString());
+  }
+
+  getTokenExpiry(): number | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const expiry = localStorage.getItem('tokenExpiry');
+    if (!expiry) {
+      return null;
+    }
+    const value = Number(expiry);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  isTokenExpired(): boolean {
+    const expiry = this.getTokenExpiry();
+    return expiry !== null && Date.now() >= expiry;
   }
 
   logout() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('tokenExpiry');
     }
   }
 

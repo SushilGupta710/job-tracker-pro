@@ -200,6 +200,10 @@ export class Login implements OnInit {
 
       if (token) {
         localStorage.setItem('token', token);
+        const expiresIn = res?.session?.expires_in || res?.expires_in;
+        if (expiresIn) {
+          this.authService.setTokenExpiry(expiresIn);
+        }
       }
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
