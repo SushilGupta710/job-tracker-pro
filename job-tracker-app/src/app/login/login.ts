@@ -49,45 +49,35 @@ export class Login implements OnInit {
     });
   }
 
-  ngOnInit() {
-    // if (isPlatformBrowser(this.platformId) && this.authService.isAuthenticated()) {
-    //   this.router.navigate(['/dashboard']);
-    // }
-    if (isPlatformBrowser(this.platformId)) {
-    // 1. Check if user is already logged in via localStorage
+ngOnInit() {
+  if (isPlatformBrowser(this.platformId)) {
+    // 1. Check if user is already logged in
     if (this.authService.isAuthenticated()) {
       this.router.navigate(['/dashboard']);
       return;
     }
 
-    // 2. Check if we just returned from Google (Token is in the URL Hash)
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token=')) {
-      this.handleGoogleHash(hash);
+    // 2. Check for the Hash from Google
+    // We use window.location.hash directly to ensure we get the latest value
+    const currentHash = window.location.hash;
+    if (currentHash && currentHash.includes('access_token=')) {
+      this.handleGoogleHash(currentHash);
     }
   }
-  }
+}
 private handleGoogleHash(hash: string) {
   const params = new URLSearchParams(hash.substring(1));
   const accessToken = params.get('access_token');
   const expiresIn = params.get('expires_in');
 
   if (accessToken) {
-    // 1. Save Token
-    localStorage.setItem('token', accessToken);
-    if (expiresIn) {
-      this.authService.setTokenExpiry(Number(expiresIn));
-    }
-
-    // 2. Extract User Data from the JWT
     try {
-      // The JWT is divided into 3 parts by dots. The middle part (index 1) has the data.
+      // Decode JWT for User Data
       const base64Url = accessToken.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(window.atob(base64));
-
-      // 3. Map Google/Supabase metadata to your User object format
       const userMetadata = payload.user_metadata || {};
+
       const user = {
         id: payload.sub,
         email: payload.email,
@@ -96,22 +86,34 @@ private handleGoogleHash(hash: string) {
         picture: userMetadata.avatar_url || userMetadata.picture
       };
 
-      // 4. Save User to localStorage
+      // 1. Save to LocalStorage
+      localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify(user));
       
+      if (expiresIn) {
+        this.authService.setTokenExpiry(Number(expiresIn));
+      }
+
+      // 2. IMPORTANT: Sync with your Extension/App state
+      this.emitAuthSyncEvent('login', accessToken, user, Number(expiresIn));
+
+      // 3. UI Feedback
+      this.showToast('Login successful!', 'success');
+      
+      // 4. Clean URL and Navigate
+      // This removes the long token from the address bar immediately
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Force Angular to notice the change and navigate
+      this.cdr.detectChanges(); 
+      setTimeout(() => {
+        this.router.navigate(['/dashboard']);
+      }, 500);
+
     } catch (e) {
-      console.error('Error decoding Google user data', e);
-      // Fallback: Save a generic user object so the app doesn't crash
-      localStorage.setItem('user', JSON.stringify({ first_name: 'Google', last_name: 'User' }));
+      console.error('Error decoding Google hash', e);
+      this.showToast('Authentication failed during token parsing.');
     }
-
-    // 5. Cleanup and Redirect
-    this.showToast('Login successful!', 'success');
-    window.history.replaceState({}, document.title, window.location.pathname);
-
-    setTimeout(() => {
-      this.router.navigate(['/dashboard']);
-    }, 800);
   }
 }
 
