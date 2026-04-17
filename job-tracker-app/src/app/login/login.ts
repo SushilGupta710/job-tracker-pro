@@ -53,7 +53,7 @@ ngOnInit() {
   if (isPlatformBrowser(this.platformId)) {
     // 1. Check if user is already logged in
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/job-tracker']);
       return;
     }
 
@@ -107,7 +107,7 @@ private handleGoogleHash(hash: string) {
       // Force Angular to notice the change and navigate
       this.cdr.detectChanges(); 
       setTimeout(() => {
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/job-tracker']);
       }, 500);
 
     } catch (e) {
@@ -277,7 +277,7 @@ continueWithGoogle() {
 
     this.showToast('Login successful!', 'success');
     setTimeout(() => {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/job-tracker']);
     }, 800);
   }
 
