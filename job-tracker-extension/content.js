@@ -292,7 +292,7 @@ function injectSlider() {
         });
     };
 
-    shadow.querySelector('#jt-open-tracker-btn').onclick = () => window.open('http://localhost:4200/dashboard', '_blank');
+    shadow.querySelector('#jt-open-tracker-btn').onclick = () => window.open('https://job-tracker-app-kohl-six.vercel.app/dashboard', '_blank');
     
     shadow.querySelector('#jt-save').onclick = () => saveJob(shadow);
     

@@ -1,9 +1,12 @@
 // Listen for messages from the Content Script (the slider)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // const localBackendUrl ='http://localhost:3000/api/jobs/create'
+    const backendUrl = 'https://smart-job-tracker-api-w44d.onrender.com/api';
+    const frontendUrl = 'https://job-tracker-app-kohl-six.vercel.app/';
     if (request.action === "saveJob") {
         const { token, jobData } = request;
 
-        fetch('https://smart-job-tracker-api-w44d.onrender.com/api/jobs/create', {
+        fetch(backendUrl+'/jobs/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -37,7 +40,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
         }
 
-        chrome.tabs.query({ url: ['http://localhost:4200/*'] }, (tabs) => {
+        chrome.tabs.query({ url: [frontendUrl+'/*'] }, (tabs) => {
             if (!tabs || !tabs.length) {
                 sendResponse({ success: false, error: 'No app tabs found' });
                 return;

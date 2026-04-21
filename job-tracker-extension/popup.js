@@ -5,7 +5,8 @@ const emailEl = document.getElementById('jt-email');
 const passwordEl = document.getElementById('jt-password');
 const openDashboardBtnEl = document.getElementById('jt-open-dashboard');
 const logoutBtnEl = document.getElementById('jt-logout-btn');
-
+const frontendUrl = 'https://job-tracker-app-kohl-six.vercel.app/';
+// const localFrontendUrl = 'http://localhost:4200/';
 if (loginBtnEl) {
     loginBtnEl.addEventListener('click', handleLogin);
 }
@@ -25,7 +26,7 @@ if (passwordEl) {
 if (openDashboardBtnEl) {
     openDashboardBtnEl.addEventListener('click', () => {
         if (chrome?.tabs?.create) {
-            chrome.tabs.create({ url: 'http://localhost:4200/dashboard' });
+            chrome.tabs.create({ url: `${frontendUrl}dashboard` });
         }
     });
 }
@@ -150,7 +151,7 @@ function attemptSyncFromWebApp() {
         return;
     }
 
-    chrome.tabs.query({ url: ['http://localhost:4200/*'] }, (tabs) => {
+    chrome.tabs.query({ url: [`${frontendUrl}/*`] }, (tabs) => {
         if (!tabs || !tabs.length) {
             return;
         }
@@ -210,7 +211,7 @@ function propagateLoginToApp(token, user, expiresIn) {
     if (!chrome?.tabs?.query) {
         return;
     }
-    chrome.tabs.query({ url: ['http://localhost:4200/*'] }, (tabs) => {
+    chrome.tabs.query({ url: [`${frontendUrl}/*`] }, (tabs) => {
         if (!tabs || !tabs.length) {
             return;
         }
@@ -229,7 +230,7 @@ function propagateLogoutToApp() {
     if (!chrome?.tabs?.query) {
         return;
     }
-    chrome.tabs.query({ url: ['http://localhost:4200/*'] }, (tabs) => {
+    chrome.tabs.query({ url: [`${frontendUrl}/*`] }, (tabs) => {
         if (!tabs || !tabs.length) {
             return;
         }
@@ -241,7 +242,7 @@ function propagateLogoutToApp() {
 
 // Dashboard button handler
 document.getElementById('jt-open-dashboard').addEventListener('click', () => {
-    chrome.tabs.create({ url: 'http://localhost:4200/dashboard' });
+    chrome.tabs.create({ url: `${frontendUrl}dashboard` });
 });
 
 // Check if already logged in when opening popup
