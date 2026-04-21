@@ -17,6 +17,7 @@
     "https://*.indeed.com/*",
     "https://*.lever.co/*",
     "https://*.greenhouse.com/*",
+    "https://job-tracker-app-kohl-six.vercel.app/*",
     "<all_urls>"
   ],
   "content_security_policy": {
